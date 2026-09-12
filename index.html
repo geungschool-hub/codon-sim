@@ -471,7 +471,7 @@ html:not(.unlocked) #draftGate{display:flex;}
     <div class="panes">
       <div class="pane-l">
         <div class="stage-wrap"><svg class="stage" id="groupStage" viewBox="0 0 700 266" xmlns="http://www.w3.org/2000/svg" role="img"
-             aria-label="mRNA 염기 12개를 고른 크기로 묶고, 묶음 하나마다 아미노산 하나를 대응시키며, 묶음 하나가 될 수 있는 모든 종류를 늘어놓은 무대"></svg></div>
+             aria-label="DNA 염기 12개를 고른 크기로 묶고, 묶음 하나마다 아미노산 하나를 대응시키며, 묶음 하나가 될 수 있는 모든 종류를 늘어놓은 무대"></svg></div>
         <div class="anicap" id="gb_cap"></div>
         <h3 style="margin-bottom:6px;">묶음 하나가 될 수 있는 가짓수 — 아미노산 20종류와 견주기</h3>
         <div class="stage-wrap" style="max-width:560px;"><div id="codeStage"></div></div>
@@ -490,7 +490,7 @@ html:not(.unlocked) #draftGate{display:flex;}
                 <tbody>
                   <tr><td>한글</td><td>자모 24</td><td>자모를 묶어 글자·낱말</td></tr>
                   <tr><td>컴퓨터</td><td>2 (0·1)</td><td>8개씩 묶어 2<sup>8</sup> = 256가지</td></tr>
-                  <tr><td>DNA·RNA</td><td>4 (A·T/U·G·C)</td><td class="q">?개씩 묶어 아미노산 20종류</td></tr>
+                  <tr><td>DNA</td><td>4 (A·T·G·C)</td><td class="q">?개씩 묶어 아미노산 20종류</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1815,9 +1815,10 @@ function renderCodeChips(){
   setHTML('codeChips', h);
 }
 /* ── ①-2 묶기 무대 — 「n개씩 묶는다」를 눈으로 (교사 2026-09-12: 「묶음 하나에 아미노산 하나가 대응된다는 인식」) ──
-   mRNA 12염기를 고른 크기로 묶고(괄호), 묶음마다 아미노산 구슬 하나를 잇는다. 아래에는 묶음 하나가 될 수 있는
-   모든 종류(4ⁿ)를 실제 글자로 늘어놓는다. 물체(괄호 12 · 구슬 12 · 칸 64)는 한 번만 짓고 자리·글자·투명도만 바꾼다. */
-var GB = { seq:'CAUGGUAACGUG', x0:104, pitch:44, yS:52, yK:86, yB:128, half:16, bead:13,
+   DNA 12염기를 고른 크기로 묶고(괄호), 묶음마다 아미노산 구슬 하나를 잇는다. 아래에는 묶음 하나가 될 수 있는
+   모든 종류(4ⁿ)를 실제 글자로 늘어놓는다. 물체(괄호 12 · 구슬 12 · 칸 64)는 한 번만 짓고 자리·글자·투명도만 바꾼다.
+   ★글자는 **DNA(A·T·G·C)** 다 — U 는 ②의 전사에서 처음 나온다. 여기서 U 를 쓰면 배우지 않은 글자가 먼저 보인다(교사 2026-09-12). */
+var GB = { seq:'CATGGTAACGTG', bases:['A','T','G','C'], x0:104, pitch:44, yS:52, yK:86, yB:128, half:16, bead:13,
            gx0:44, gpitch:40, gy0:190, gdy:22, cols:16 };
 function gbGroups(n){
   n = Number(n) || 0;
@@ -1826,14 +1827,14 @@ function gbGroups(n){
   for (var i = 0; i + n <= GB.seq.length; i += n) out.push({ start:i, n:n, x:GB.x0 + GB.pitch * (i + (n - 1) / 2) });
   return out;
 }
-/* n 자리 묶음이 될 수 있는 모든 종류 — 축 차례(U·C·A·G)대로 4ⁿ 개 */
+/* n 자리 묶음이 될 수 있는 모든 종류 — DNA 글자 차례(A·T·G·C)대로 4ⁿ 개 */
 function gbCombos(n){
   n = Number(n) || 0;
   if (n < 1) return [];
   var out = [''];
   for (var k = 0; k < n; k++){
     var nx = [];
-    out.forEach(function(pfx){ BASES4.forEach(function(b){ nx.push(pfx + b); }); });
+    out.forEach(function(pfx){ GB.bases.forEach(function(b){ nx.push(pfx + b); }); });
     out = nx;
   }
   return out;
@@ -1858,7 +1859,7 @@ function gbLayout(n){
   }
   var count = combos.length, enough = count >= AA_KINDS;
   var cap = !n
-    ? '묶음 크기를 고르면 mRNA 가 그 크기로 묶이고, <b>묶음 하나마다 아미노산 하나</b>가 대응된다.'
+    ? '묶음 크기를 고르면 DNA 의 염기가 그 크기로 묶이고, <b>묶음 하나마다 아미노산 하나</b>가 대응된다.'
     : n + '개씩 묶으면 묶음 <b>' + groups.length + '개</b> → 아미노산 <b>' + groups.length + '개</b>. ' +
       '묶음 하나가 될 수 있는 종류는 4<sup>' + n + '</sup> = <b>' + count + '가지</b> — ' +
       (enough ? '아미노산 20종류를 <b>다 가리킬 수 있다</b>.' : '아미노산 20종류에 <b>모자란다</b>.');
@@ -1873,16 +1874,16 @@ function gbStageSvg(){
            '" font-weight="' + (weight || 700) + '" fill="' + color + '"' +
            (op !== undefined ? ' opacity="' + op + '"' : '') + '>' + t + '</text>';
   };
-  s += txt('', GB.x0 - 34, GB.yS + 5, 'mRNA', 14, '#5321A8', 'end');
+  s += txt('', GB.x0 - 34, GB.yS + 5, 'DNA', 14, '#0A6B67', 'end');
   s += txt('', GB.x0 - 34, GB.yB + 5, '아미노산', 13.5, '#8E1147', 'end');
   for (i = 0; i < GB.seq.length; i++){
     var x = GB.x0 + GB.pitch * i;
-    s += '<g transform="translate(' + x + ',' + GB.yS + ')"><rect x="-16" y="-16" width="32" height="32" rx="6" fill="' + C_RNA + '"/>' +
+    s += '<g transform="translate(' + x + ',' + GB.yS + ')"><rect x="-16" y="-16" width="32" height="32" rx="6" fill="' + C_DNA + '"/>' +
          txt('', 0, 6, GB.seq.charAt(i), 17, '#fff', 'middle', 800) + '</g>';
   }
   /* 괄호 + 구슬로 잇는 선 — 묶음마다 하나. 12개를 미리 짓고 쓰는 만큼만 켠다 */
   for (i = 0; i < GB.seq.length; i++){
-    s += '<g id="gb_k_' + i + '" class="rmove" opacity="0"><path id="gb_kp_' + i + '" d="M-18,-3 L-18,3 L18,3 L18,-3" fill="none" stroke="' + C_RNA + '" stroke-width="2.2"/>' +
+    s += '<g id="gb_k_' + i + '" class="rmove" opacity="0"><path id="gb_kp_' + i + '" d="M-18,-3 L-18,3 L18,3 L18,-3" fill="none" stroke="' + C_DNA + '" stroke-width="2.2"/>' +
          '<line x1="0" y1="3" x2="0" y2="' + (GB.yB - GB.yK - GB.bead - 2) + '" stroke="' + C_PROT + '" stroke-width="2" stroke-dasharray="3,3"/></g>';
   }
   for (i = 0; i < GB.seq.length; i++){
@@ -1893,7 +1894,7 @@ function gbStageSvg(){
   s += txt('gb_cnt', 656, GB.gy0 - 18, '', 13, '#1A1A1A', 'end', 800);
   for (i = 0; i < 64; i++){
     s += '<g id="gb_c_' + i + '" class="rmove" opacity="0"><rect x="-18" y="-10" width="36" height="18" rx="4" fill="#F2F4F7" stroke="#C8CDD4" stroke-width="1"/>' +
-         '<text id="gb_ct_' + i + '" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#5321A8" font-family="Consolas,Menlo,monospace"></text></g>';
+         '<text id="gb_ct_' + i + '" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#0A6B67" font-family="Consolas,Menlo,monospace"></text></g>';
   }
   return s;
 }
