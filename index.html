@@ -1823,7 +1823,8 @@ function renderCodeStage(){
   CODE_SIZES.forEach(function(n, i){
     var x = x0 + gap * i, shown = !!state.codeRun[String(n)];
     var h = codeBarH(n), y = base - h;
-    s += '<g id="cb_' + n + '" class="rfade" opacity="' + (shown ? 1 : 0.12) + '">';
+    /* ★누르기 전에는 **아예 보이지 않는다** — 흐릿하게라도 보이면 막대 높이가 곧 답이다(교사 2026-09-12) */
+    s += '<g id="cb_' + n + '" class="rfade" opacity="' + (shown ? 1 : 0) + '">';
     s += '<rect x="' + (x - 36) + '" y="' + y + '" width="72" height="' + h + '" rx="6" fill="' +
          (codeEnough(n) ? C_PROT : C_DNA) + '"/>';
     if (shown){
@@ -1831,10 +1832,8 @@ function renderCodeStage(){
            codeCount(n) + '가지</text>';
     }
     s += '</g>';
-    s += '<text x="' + x + '" y="' + (base + 20) + '" text-anchor="middle" font-size="14" fill="#555">' +
-         n + '개씩</text>';
-    s += '<text x="' + x + '" y="' + (base + 37) + '" text-anchor="middle" font-size="13" fill="#98A0AC">4' +
-         ['', '¹', '²', '³'][n] + '</text>';
+    s += '<text x="' + x + '" y="' + (base + 22) + '" text-anchor="middle" font-size="14" fill="#555">' +
+         n + '개씩</text>';   /* 4ⁿ 표기는 뺐다 — 무대 아래로 잘려 보였고 피드백이 이미 말한다 */
   });
   s += '</svg>';
   setHTML('codeStage', s);
