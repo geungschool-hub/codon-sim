@@ -470,7 +470,7 @@ html:not(.unlocked) #draftGate{display:flex;}
     </div>
     <div class="panes">
       <div class="pane-l">
-        <div class="stage-wrap"><svg class="stage" id="groupStage" viewBox="0 0 700 266" xmlns="http://www.w3.org/2000/svg" role="img"
+        <div class="stage-wrap"><svg class="stage" id="groupStage" viewBox="0 0 700 292" xmlns="http://www.w3.org/2000/svg" role="img"
              aria-label="DNA 염기 12개를 고른 크기로 묶고, 묶음 하나마다 아미노산 하나를 대응시키며, 묶음 하나가 될 수 있는 모든 종류를 늘어놓은 무대"></svg></div>
         <div class="anicap" id="gb_cap"></div>
         <h3 style="margin-bottom:6px;">묶음 하나가 될 수 있는 가짓수 — 아미노산 20종류와 견주기</h3>
@@ -523,7 +523,7 @@ html:not(.unlocked) #draftGate{display:flex;}
     </div>
     <div class="panes">
       <div class="pane-l">
-        <div class="stage-wrap"><svg class="stage" id="zmStage" viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" role="img"
+        <div class="stage-wrap"><svg class="stage" id="zmStage" viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" role="img"
              aria-label="세포 속 DNA 의 한 부분을 확대해 주형 가닥에서 mRNA 가 전사되고, 개시코돈부터 코돈마다 아미노산이 붙어 폴리펩타이드가 되는 과정"></svg></div>
         <div class="anibar">
           <button type="button" class="btn dna ghost" id="zm_first" onclick="aniGo('zm',-99)">⏮ 처음부터</button>
@@ -1548,7 +1548,7 @@ function renderLegend(){
    ★transform 은 zwSet 한 함수로만 쓴다 — translate·scale 순서가 국면마다 다르면 전이가 튄다.
    ★세계 안 <text> 는 염기 글자뿐이고 세포 축척에서는 op 0 이다(1/6 로 줄어든 글자는 읽을 수 없다).
    ══════════════════════════════════════════════════════════════ */
-var ZM = { pitch:30, x0:155, yC:96, yT:132, yM:212, yK:238, yA:300, half:12, S:1/6, chainX0:227, chainDx:82,
+var ZM = { pitch:30, x0:155, yC:96, yT:132, yM:212, yK:238, yBan:290, yA:330, half:12, S:1/6, chainX0:227, chainDx:82,
            tileStagger:0.12, aaStagger:0.3 };
 function zmX(i){ return ZM.x0 + ZM.pitch * i; }
 function zmCodX(k){ return zmX(DEMO_START + 3 * k + 1); }             /* 코돈 k 의 가운데 염기 자리 */
@@ -1570,7 +1570,7 @@ var ZM_STEPS = [
   '세포 속 DNA 의 한 부분을 확대한다',
   '① 유전자 — DNA 두 가닥 중 주형 가닥을 읽는다',
   '② 전사 — 주형에 상보적인 염기가 짝지어 mRNA 가 된다',
-  '③ 개시코돈 AUG 부터 세 글자씩 끊는다',
+  '③ 세 글자씩 끊는다 — 이 묶음이 코돈이다',
   '④ 번역 — 코돈마다 아미노산이 하나씩 온다',
   '⑤ 폴리펩타이드 — 빈칸을 채우시오'
 ];
@@ -1578,7 +1578,7 @@ var ZM_CAP = [
   '①에서 본 세포다. 핵 속 DNA 의 <b>유전자 한 부분</b>을 확대해 들어간다.',
   'DNA 두 가닥 중 <b>주형 가닥</b>(3′→5′) 하나만 읽는다. 다른 가닥은 베끼지 않는다.',
   '<b>전사</b> — 주형의 염기에 짝이 되는 염기가 5′→3′ 로 하나씩 붙어 mRNA 가 된다. <b>A 에는 T 가 아니라 U</b> 가 온다.',
-  'mRNA 에서 <b>개시코돈 AUG</b> 를 찾아, 거기서부터 세 글자씩 끊어 읽는다. 세 글자 한 묶음이 <b>코돈</b>이다.',
+  'mRNA 에서 <b>개시코돈 AUG</b> 를 찾아, 거기서부터 세 글자씩 끊어 읽는다. <b>mRNA 의 세 염기 묶음 하나를 코돈이라고 한다.</b>',
   '<b>번역</b> — 코돈 하나에 아미노산 하나가 온다. 코돈 4개 → 아미노산 4개.',
   '아미노산이 이어져 <b>폴리펩타이드</b>가 된다. 이제 오른쪽 칩으로 <b>mRNA 의 빈칸 4개</b>를 채우시오.'
 ];
@@ -1617,7 +1617,7 @@ function zoomLayout(ph, fill){
   return {
     ph:p, step:ZM_STEPS[p], cap:ZM_CAP[p], world:zoomWorld(p),
     dnaText:(p >= 1 ? 1 : 0), tmplMark:(p >= 1 ? 1 : 0),
-    mrna:mrna, pair:pair, codon:codon, start:(p >= 3 ? 1 : 0), aa:aa, bond:bond,
+    mrna:mrna, pair:pair, codon:codon, start:(p >= 3 ? 1 : 0), banner:(p >= 3 ? 1 : 0), aa:aa, bond:bond,
     labels:{ nuc:(p === 0 ? 1 : 0), cell:(p === 0 ? 1 : 0), ring:(p === 0 ? 1 : 0),
              tmpl:(p >= 1 ? 1 : 0), mrnaRow:(p >= 2 ? 1 : 0), aa:(p === 4 ? 1 : 0), pep:(p >= 5 ? 1 : 0) },
     done:zoomDone(fill)
@@ -1693,6 +1693,10 @@ function zmStageSvg(){
          '<path d="M-42,-2 v6 h84 v-6" fill="none" stroke="' + C_RNA + '" stroke-width="2"/>' +
          txt('', 0, 20, (k === 0 ? '개시코돈 AUG' : '코돈 ' + (k + 1)), 12.5, '#5321A8', 'middle', 700) + '</g>';
   }
+  /* ★코돈 띠 — 「mRNA 의 세 염기 묶음 하나 = 코돈」. 국면 3부터 켜진다(교사 2026-09-12: 「코돈을 표시하는 단계에서 확실히 등장」) */
+  s += '<g id="zm_banner" class="rfade" transform="translate(' + zmX(7) + ',' + ZM.yBan + ')" opacity="0">' +
+       '<rect x="-190" y="-14" width="380" height="28" rx="14" fill="' + C_RNA + '"/>' +
+       txt('', 0, 5, 'mRNA 의 세 염기 묶음 하나 = 코돈', 15, '#fff', 'middle', 800) + '</g>';
   /* 아미노산 구슬 + 결합선 */
   for (k = 0; k < DEMO_AA.length - 1; k++){
     var bx = ZM.chainX0 + ZM.chainDx * k;
@@ -1730,6 +1734,7 @@ function zmApply(ph, prev){
   }
   fadeTo('zl_mrow', L.labels.mrnaRow);
   for (k = 0; k < L.codon.length; k++) fadeTo('zm_k_' + k, L.codon[k].op);
+  fadeTo('zm_banner', L.banner);
   for (k = 0; k < L.aa.length; k++){ delayOf('zm_a_' + k, stg.aa[k]); putAt('zm_a_' + k, L.aa[k].x, L.aa[k].y, L.aa[k].op); }
   for (k = 0; k < L.bond.length; k++) fadeTo('zm_b_' + k, L.bond[k].op);
   fadeTo('zl_aa', L.labels.aa); fadeTo('zl_pep', L.labels.pep);
@@ -1819,7 +1824,7 @@ function renderCodeChips(){
    모든 종류(4ⁿ)를 실제 글자로 늘어놓는다. 물체(괄호 12 · 구슬 12 · 칸 64)는 한 번만 짓고 자리·글자·투명도만 바꾼다.
    ★글자는 **DNA(A·T·G·C)** 다 — U 는 ②의 전사에서 처음 나온다. 여기서 U 를 쓰면 배우지 않은 글자가 먼저 보인다(교사 2026-09-12). */
 var GB = { seq:'CATGGTAACGTG', bases:['A','T','G','C'], x0:104, pitch:44, yS:52, yK:86, yB:128, half:16, bead:13,
-           gx0:44, gpitch:40, gy0:190, gdy:22, cols:16 };
+           yBan:166, gx0:44, gpitch:40, gy0:216, gdy:22, cols:16 };
 function gbGroups(n){
   n = Number(n) || 0;
   if (n < 1) return [];
@@ -1864,6 +1869,7 @@ function gbLayout(n){
       '묶음 하나가 될 수 있는 종류는 4<sup>' + n + '</sup> = <b>' + count + '가지</b> — ' +
       (enough ? '아미노산 20종류를 <b>다 가리킬 수 있다</b>.' : '아미노산 20종류에 <b>모자란다</b>.');
   return { n:n, groups:groups.length, brackets:brackets, beads:beads, cells:cells, count:count, enough:enough, cap:cap,
+           banner:(n === 3 ? 1 : 0),                       /* ★3개씩일 때만 — 「세 염기 한 묶음 → 아미노산 하나 = 코돈」 띠 */
            cnt:(n ? '4' + ['', '¹', '²', '³'][n] + ' = ' + count + '가지' : '') };
 }
 function gbStageSvg(){
@@ -1889,6 +1895,10 @@ function gbStageSvg(){
   for (i = 0; i < GB.seq.length; i++){
     s += '<g id="gb_b_' + i + '" class="rmove" opacity="0"><circle r="' + GB.bead + '" fill="' + C_PROT + '"/><circle cx="0" cy="-4" r="2.2" fill="#fff"/></g>';
   }
+  /* ★코돈 띠 — 3개씩 묶었을 때만. 결론이 글로만 있지 않고 무대에 박힌다(교사 2026-09-12) */
+  s += '<g id="gb_banner" class="rfade" transform="translate(' + (GB.x0 + GB.pitch * 5.5) + ',' + GB.yBan + ')" opacity="0">' +
+       '<rect x="-215" y="-14" width="430" height="28" rx="14" fill="' + C_PROT + '"/>' +
+       txt('', 0, 5, '세 염기 한 묶음 → 아미노산 하나 — 이 묶음을 코돈이라고 한다', 14.5, '#fff', 'middle', 800) + '</g>';
   /* 묶음 하나가 될 수 있는 종류 — 64칸을 미리 짓는다 */
   s += txt('', GB.gx0 - 14, GB.gy0 - 18, '묶음 하나가 될 수 있는 종류', 12.5, '#555', 'start', 700);
   s += txt('gb_cnt', 656, GB.gy0 - 18, '', 13, '#1A1A1A', 'end', 800);
@@ -1914,6 +1924,7 @@ function gbApply(n){
   }
   var c = document.getElementById('gb_cnt');
   if (c) c.textContent = L.cnt;
+  fadeTo('gb_banner', L.banner);
   setHTML('gb_cap', L.cap);
 }
 function gbRender(){
