@@ -462,10 +462,10 @@ html:not(.unlocked) #draftGate{display:flex;}
     <div class="secreset"><button type="button" onclick="resetSec('cell')">↻ ① 처음 국면부터 다시 보기</button></div>
   </div>
 
-  <!-- ══ ② 확대 — 61쪽 그림 Ⅱ-2 ══ -->
+  <!-- ══ ② 염기서열에 집중하기 — 61쪽 그림 Ⅱ-2 ══ -->
   <div class="card split" id="cardZoom">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-      <h2 class="dna" style="flex:1 1 300px;margin-bottom:0;">② 확대 — 유전자에서 폴리펩타이드까지 글자로 본다<span class="yr">교과서 61쪽 그림 Ⅱ-2</span></h2>
+      <h2 class="dna" style="flex:1 1 300px;margin-bottom:0;">② 염기서열에 집중하기<span class="yr">교과서 61쪽 그림 Ⅱ-2</span></h2>
       <span class="tag" id="zoomProg">채운 빈칸 0 / 4</span>
     </div>
     <div class="panes">
@@ -1075,7 +1075,7 @@ var LS_KEY = 'codon_sim_v2';
 
 var STEPS = [
   { key:'cell', no:'①', name:'세포 한 바퀴',   sub:'전사·번역·RNA 3종', cls:'rna'  },
-  { key:'zoom', no:'②', name:'유전자 확대',    sub:'주형 → mRNA → 아미노산', cls:'dna' },
+  { key:'zoom', no:'②', name:'염기서열에 집중하기', sub:'주형 → mRNA → 아미노산', cls:'dna' },
   { key:'code', no:'③', name:'사전 — 코돈표',  sub:'3염기조합·종결·개시', cls:''   },
   { key:'dec',  no:'④', name:'해독',          sub:'읽기틀·8코돈',       cls:'prot' },
   { key:'mut',  no:'⑤', name:'염기 하나가 바뀌면', sub:'치환 3자리',    cls:'teal' }
@@ -1668,7 +1668,7 @@ function zmStageSvg(){
   s += txt('zl_nuc', CS.nuc.cx, 82, '핵', 15, C_GEAR, 'middle', 700, 1, 'rfade');
   s += txt('zl_cell', 420, 318, '세포질', 15, C_GEAR, 'middle', 700, 1, 'rfade');
   s += '<g id="zl_ring" class="rfade" opacity="1"><rect x="' + (CS.dna.x - 46) + '" y="' + (CS.dna.y - 19) + '" width="92" height="38" rx="8" fill="none" stroke="' +
-       C_DNA + '" stroke-width="2" stroke-dasharray="6,4"/>' + txt('', CS.dna.x, CS.dna.y + 40, '이 부분을 확대한다', 13, '#0A6B67', 'middle', 700) + '</g>';
+       C_DNA + '" stroke-width="2" stroke-dasharray="6,4"/></g>';   /* 글은 없다 — 「이 부분을 확대한다」는 군더더기였다(교사 2026-09-12) */
   return s;
   function r1(v){ return Math.round(v * 10) / 10; }
 }
