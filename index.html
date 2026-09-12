@@ -470,26 +470,30 @@ html:not(.unlocked) #draftGate{display:flex;}
     </div>
     <div class="panes">
       <div class="pane-l">
-        <div class="panel" style="margin-top:0;">
-          <div class="ptitle">🔎 부호 — 글자 몇 개로 무엇을 적는가</div>
-          <div class="tbl-outer" style="margin-top:4px;">
-            <table class="t codetbl">
-              <thead><tr><th>부호</th><th>글자 수</th><th>묶는 방법</th></tr></thead>
-              <tbody>
-                <tr><td>한글</td><td>자모 24</td><td>자모를 묶어 글자·낱말</td></tr>
-                <tr><td>컴퓨터</td><td>2 (0·1)</td><td>8개씩 묶어 2<sup>8</sup> = 256가지</td></tr>
-                <tr><td>DNA·RNA</td><td>4 (A·T/U·G·C)</td><td class="q">?개씩 묶어 아미노산 20종류</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="stage-wrap" style="margin-top:10px;"><div id="codeStage"></div></div>
+        <div class="stage-wrap"><svg class="stage" id="groupStage" viewBox="0 0 700 266" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="mRNA 염기 12개를 고른 크기로 묶고, 묶음 하나마다 아미노산 하나를 대응시키며, 묶음 하나가 될 수 있는 모든 종류를 늘어놓은 무대"></svg></div>
+        <div class="anicap" id="gb_cap"></div>
+        <h3 style="margin-bottom:6px;">묶음 하나가 될 수 있는 가짓수 — 아미노산 20종류와 견주기</h3>
+        <div class="stage-wrap" style="max-width:560px;"><div id="codeStage"></div></div>
       </div>
       <div class="pane-r">
         <div class="pr-do">
           <div class="datbox" style="margin-top:0;">
             DNA 의 글자는 <b>4개</b>(A·T·G·C), 단백질의 글자는 <b>20개</b>(아미노산)이다. 4개로 20개를 적으려면 <b>몇 개씩 묶어야 하는가</b> —
             유전부호가 밝혀지기 전에 과학자들이 먼저 따져 본 물음이다.
+          </div>
+          <div class="panel">
+            <div class="ptitle">🔎 부호 — 글자 몇 개로 무엇을 적는가</div>
+            <div class="tbl-outer" style="margin-top:4px;">
+              <table class="t codetbl">
+                <thead><tr><th>부호</th><th>글자 수</th><th>묶는 방법</th></tr></thead>
+                <tbody>
+                  <tr><td>한글</td><td>자모 24</td><td>자모를 묶어 글자·낱말</td></tr>
+                  <tr><td>컴퓨터</td><td>2 (0·1)</td><td>8개씩 묶어 2<sup>8</sup> = 256가지</td></tr>
+                  <tr><td>DNA·RNA</td><td>4 (A·T/U·G·C)</td><td class="q">?개씩 묶어 아미노산 20종류</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
           <div class="taskbar" style="margin-top:12px;">1개씩 · 2개씩 · 3개씩 — 셋 다 눌러 몇 가지가 되는지 확인하시오.</div>
           <div class="chips" id="codeChips"></div>
@@ -1810,6 +1814,113 @@ function renderCodeChips(){
   });
   setHTML('codeChips', h);
 }
+/* ── ①-2 묶기 무대 — 「n개씩 묶는다」를 눈으로 (교사 2026-09-12: 「묶음 하나에 아미노산 하나가 대응된다는 인식」) ──
+   mRNA 12염기를 고른 크기로 묶고(괄호), 묶음마다 아미노산 구슬 하나를 잇는다. 아래에는 묶음 하나가 될 수 있는
+   모든 종류(4ⁿ)를 실제 글자로 늘어놓는다. 물체(괄호 12 · 구슬 12 · 칸 64)는 한 번만 짓고 자리·글자·투명도만 바꾼다. */
+var GB = { seq:'CAUGGUAACGUG', x0:104, pitch:44, yS:52, yK:86, yB:128, half:16, bead:13,
+           gx0:44, gpitch:40, gy0:190, gdy:22, cols:16 };
+function gbGroups(n){
+  n = Number(n) || 0;
+  if (n < 1) return [];
+  var out = [];
+  for (var i = 0; i + n <= GB.seq.length; i += n) out.push({ start:i, n:n, x:GB.x0 + GB.pitch * (i + (n - 1) / 2) });
+  return out;
+}
+/* n 자리 묶음이 될 수 있는 모든 종류 — 축 차례(U·C·A·G)대로 4ⁿ 개 */
+function gbCombos(n){
+  n = Number(n) || 0;
+  if (n < 1) return [];
+  var out = [''];
+  for (var k = 0; k < n; k++){
+    var nx = [];
+    out.forEach(function(pfx){ BASES4.forEach(function(b){ nx.push(pfx + b); }); });
+    out = nx;
+  }
+  return out;
+}
+function gbLayout(n){
+  n = (CODE_SIZES.indexOf(Number(n)) >= 0) ? Number(n) : 0;
+  var groups = gbGroups(n), brackets = [], beads = [], cells = [], i, k;
+  for (k = 0; k < GB.seq.length; k++){
+    var g = groups[k];
+    if (g){
+      brackets.push({ x:g.x, w:GB.pitch * g.n - 10, op:1 });
+      beads.push({ x:g.x, y:GB.yB, op:1 });
+    } else {                                  /* 쓰이지 않는 괄호·구슬은 제 자리에 op 0 */
+      brackets.push({ x:GB.x0 + GB.pitch * k, w:GB.pitch - 10, op:0 });
+      beads.push({ x:GB.x0 + GB.pitch * k, y:GB.yB, op:0 });
+    }
+  }
+  var combos = gbCombos(n);
+  for (i = 0; i < 64; i++){
+    cells.push({ x:GB.gx0 + GB.gpitch * (i % GB.cols), y:GB.gy0 + GB.gdy * Math.floor(i / GB.cols),
+                 txt:(combos[i] || ''), op:(combos[i] ? 1 : 0) });
+  }
+  var count = combos.length, enough = count >= AA_KINDS;
+  var cap = !n
+    ? '묶음 크기를 고르면 mRNA 가 그 크기로 묶이고, <b>묶음 하나마다 아미노산 하나</b>가 대응된다.'
+    : n + '개씩 묶으면 묶음 <b>' + groups.length + '개</b> → 아미노산 <b>' + groups.length + '개</b>. ' +
+      '묶음 하나가 될 수 있는 종류는 4<sup>' + n + '</sup> = <b>' + count + '가지</b> — ' +
+      (enough ? '아미노산 20종류를 <b>다 가리킬 수 있다</b>.' : '아미노산 20종류에 <b>모자란다</b>.');
+  return { n:n, groups:groups.length, brackets:brackets, beads:beads, cells:cells, count:count, enough:enough, cap:cap,
+           cnt:(n ? '4' + ['', '¹', '²', '³'][n] + ' = ' + count + '가지' : '') };
+}
+function gbStageSvg(){
+  var s = '', i;
+  var txt = function(id, x, y, t, size, color, anchor, weight, op, cls){
+    return '<text' + (id ? ' id="' + id + '"' : '') + (cls ? ' class="' + cls + '"' : '') +
+           ' x="' + x + '" y="' + y + '" text-anchor="' + (anchor || 'middle') + '" font-size="' + size +
+           '" font-weight="' + (weight || 700) + '" fill="' + color + '"' +
+           (op !== undefined ? ' opacity="' + op + '"' : '') + '>' + t + '</text>';
+  };
+  s += txt('', GB.x0 - 34, GB.yS + 5, 'mRNA', 14, '#5321A8', 'end');
+  s += txt('', GB.x0 - 34, GB.yB + 5, '아미노산', 13.5, '#8E1147', 'end');
+  for (i = 0; i < GB.seq.length; i++){
+    var x = GB.x0 + GB.pitch * i;
+    s += '<g transform="translate(' + x + ',' + GB.yS + ')"><rect x="-16" y="-16" width="32" height="32" rx="6" fill="' + C_RNA + '"/>' +
+         txt('', 0, 6, GB.seq.charAt(i), 17, '#fff', 'middle', 800) + '</g>';
+  }
+  /* 괄호 + 구슬로 잇는 선 — 묶음마다 하나. 12개를 미리 짓고 쓰는 만큼만 켠다 */
+  for (i = 0; i < GB.seq.length; i++){
+    s += '<g id="gb_k_' + i + '" class="rmove" opacity="0"><path id="gb_kp_' + i + '" d="M-18,-3 L-18,3 L18,3 L18,-3" fill="none" stroke="' + C_RNA + '" stroke-width="2.2"/>' +
+         '<line x1="0" y1="3" x2="0" y2="' + (GB.yB - GB.yK - GB.bead - 2) + '" stroke="' + C_PROT + '" stroke-width="2" stroke-dasharray="3,3"/></g>';
+  }
+  for (i = 0; i < GB.seq.length; i++){
+    s += '<g id="gb_b_' + i + '" class="rmove" opacity="0"><circle r="' + GB.bead + '" fill="' + C_PROT + '"/><circle cx="0" cy="-4" r="2.2" fill="#fff"/></g>';
+  }
+  /* 묶음 하나가 될 수 있는 종류 — 64칸을 미리 짓는다 */
+  s += txt('', GB.gx0 - 14, GB.gy0 - 18, '묶음 하나가 될 수 있는 종류', 12.5, '#555', 'start', 700);
+  s += txt('gb_cnt', 656, GB.gy0 - 18, '', 13, '#1A1A1A', 'end', 800);
+  for (i = 0; i < 64; i++){
+    s += '<g id="gb_c_' + i + '" class="rmove" opacity="0"><rect x="-18" y="-10" width="36" height="18" rx="4" fill="#F2F4F7" stroke="#C8CDD4" stroke-width="1"/>' +
+         '<text id="gb_ct_' + i + '" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#5321A8" font-family="Consolas,Menlo,monospace"></text></g>';
+  }
+  return s;
+}
+var gbMounted = false;
+function gbApply(n){
+  var L = gbLayout(n), i;
+  for (i = 0; i < L.brackets.length; i++){
+    var b = L.brackets[i], pth = document.getElementById('gb_kp_' + i);
+    if (pth) pth.setAttribute('d', 'M' + (-b.w / 2) + ',-3 L' + (-b.w / 2) + ',3 L' + (b.w / 2) + ',3 L' + (b.w / 2) + ',-3');
+    putAt('gb_k_' + i, b.x, GB.yK, b.op);
+    putAt('gb_b_' + i, L.beads[i].x, L.beads[i].y, L.beads[i].op);
+  }
+  for (i = 0; i < L.cells.length; i++){
+    var t = document.getElementById('gb_ct_' + i);
+    if (t) t.textContent = L.cells[i].txt;
+    putAt('gb_c_' + i, L.cells[i].x, L.cells[i].y, L.cells[i].op);
+  }
+  var c = document.getElementById('gb_cnt');
+  if (c) c.textContent = L.cnt;
+  setHTML('gb_cap', L.cap);
+}
+function gbRender(){
+  var host = document.getElementById('groupStage');
+  if (!host) return;
+  if (!gbMounted){ host.innerHTML = gbStageSvg(); gbMounted = true; }
+  gbApply(state.codeLast);
+}
 /* 막대 높이는 가짓수에 정비례한다 — 「분율」로 그리지 않는다. */
 var CODE_MAXH = 130, CODE_MAXV = 64;
 function codeBarH(n){ return CODE_MAXH * codeCount(n) / CODE_MAXV; }
@@ -1845,7 +1956,7 @@ function pickCode(n){
   state.codeRun[String(n)] = true;
   state.codeLast = n;
   saveState();
-  renderCodeChips(); renderCodeStage();
+  renderCodeChips(); renderCodeStage(); gbRender();
   showFb('fb_code', codeEnough(n) ? 'good' : 'warn',
     n + '개씩 묶으면 4<sup>' + n + '</sup> = <b>' + codeCount(n) + '가지</b>. ' +
     (codeEnough(n)
@@ -2561,7 +2672,7 @@ function resetAll(){
   /* ★메모리도 함께 비운다 — 새로고침이 끝나기 전에 무엇이든 누르면
      saveState() 가 옛 state 를 그대로 다시 써 버려 지운 것이 되살아난다(1-4 검토에서 겪었다). */
   state = freshState();
-  csMounted = false; zmMounted = false;
+  csMounted = false; zmMounted = false; gbMounted = false;
   ANI = { cs:{ ph:0, prev:-1 }, zm:{ ph:0, prev:-1 } };
   if (typeof location !== 'undefined' && location.reload) location.reload();
 }
@@ -2571,7 +2682,7 @@ function restoreUI(){
   renderLegend();
   csRender();
   zmRender();
-  renderCodeChips(); renderCodeStage();
+  renderCodeChips(); renderCodeStage(); gbRender();
   renderCodonTable('codonTable3', 'c3', 'ctTap3');
   renderCodonTable('codonTable4', 'c4', 'ctTap4');
   renderFind();
