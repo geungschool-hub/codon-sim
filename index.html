@@ -250,6 +250,11 @@ table.t.mut-sum{margin-top:12px;width:100%;min-width:0;}
 .tile.changed{background:var(--prot-bg);border-color:var(--prot);color:var(--prot-ink);}
 .tile.dna{color:var(--dna-ink);}   /* ✏️ 주형 가닥 — DNA 는 청록 */
 .dlabel{font-weight:700;font-size:15px;color:var(--sub);margin-top:12px;}
+.strand.pair{align-items:stretch;}
+.pcol{display:inline-flex;flex-direction:column;gap:3px;}
+.pend{display:inline-flex;flex-direction:column;justify-content:space-around;font-size:14px;font-weight:700;color:var(--sub);padding:0 4px;}
+.tile.now{border:2px solid var(--yellow);background:var(--yellow-bg);}
+.tile.blank{background:#F2F4F7;border-style:dashed;}
 
 /* 폴리펩타이드 구슬 — 색은 하나(자홍)로 둔다. 아미노산마다 색을 주면 「색=종류」가 하나 더 생긴다. */
 .pep{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;min-height:40px;}
@@ -1269,6 +1274,7 @@ function freshState(){
     mutNow:null,       /* ⑤ 지금 고른 변화의 id (그림 아래 행) */
     drillN:{},         /* ✏️ 서열마다 맞게 탭한 코돈 수 {k1:n,…} — 틀린 탭은 남기지 않는다 */
     drillHint:{},      /* ✏️ 서열마다 연 힌트 단계 {k1:1|2} */
+    drillTx:{},        /* ✏️ 연습 2 — 채운 mRNA 염기 수 {k2:n} (틀린 염기는 남기지 않는다) */
     drillNow:null,     /* ✏️ 지금 고른 서열 id (🎲 'rand' 는 새로고침하면 연습 1 로) */
     qPick:{},          /* ①②③④⑤ 결론 문항 */
     pPick:{},          /* 💪 더 풀어 보기 */
@@ -2784,9 +2790,12 @@ var DRILLS = [
   { id:'k1', name:'개시코돈 찾기', given:'mrna', seq:'GCAUGUUUGGCAAAUGGUAACG',
     task:'mRNA 의 일부분이다. 번역이 시작되는 자리를 찾아, 그 자리부터 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
     hint:'번역은 개시코돈 <b>AUG</b> 에서 시작한다. 5′ 쪽에서부터 AUG 를 찾으시오.' },
-  { id:'k2', name:'주형 가닥에서', given:'template', seq:'CTACGGTCTAACGATCG',
-    task:'DNA 주형 가닥이다. 이 가닥에서 전사되는 mRNA 를 떠올린 뒤, 개시코돈부터 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
-    hint:'주형의 A → U, T → A, G → C, C → G 로 바꾸면 mRNA 가 된다. 주형의 <b>TAC</b> 가 개시코돈 AUG 가 된다.' },
+  /* ★두 단계다(교사 지적 2026-10-12 「말도 안 되게 어렵다」 — 17염기를 머릿속으로 전사하며 AUG 까지 찾게 했었다).
+       ① 주형 아래 mRNA 칸을 왼쪽부터 한 염기씩 채운다(② 와 같은 조작) → ② 채운 mRNA 를 보며 연습 1 처럼 해독한다. */
+  { id:'k2', name:'주형 가닥에서', given:'template', seq:'CTACGGTCTAATCG',
+    task:'DNA 주형 가닥이다. 먼저 아래 칸에 전사되는 mRNA 를 왼쪽부터 한 염기씩 채우시오.',
+    task2:'완성한 mRNA 에서 개시코돈을 찾아, 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
+    hint:'주형의 A → U, T → A, G → C, C → G 로 짝을 짓는다. 주형의 <b>TAC</b> 가 개시코돈 AUG 가 된다.' },
   { id:'k3', name:'염기가 빠지면', given:'mrna', seq:'AUGGUGUUGACUGAUUAGUA', mut:{ type:'del', pos:5 },
     task:'아래 mRNA 의 염기서열이 바뀌었다. 바뀐 mRNA 를 1번째 염기부터 읽어, 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
     hint:'빠진 자리부터 뒤의 염기가 한 칸씩 당겨진다. 바뀐 서열을 처음부터 다시 세 글자씩 끊으시오.' },
@@ -2823,7 +2832,7 @@ function drillMutText(d){
 function drillNowId(){ return drillById(state.drillNow) ? String(state.drillNow) : DRILLS[0].id; }
 function drillGetN(id){ return id === 'rand' ? drillRandN : (Number(state.drillN[id]) || 0); }
 function drillGetHint(id){ return id === 'rand' ? drillRandHint : (Number(state.drillHint[id]) || 0); }
-function drillDone(id){ var d = drillById(id); return !!d && drillGetN(id) >= drillKey(d).codons.length; }
+function drillDone(id){ var d = drillById(id); return !!d && drillTxDone(d) && drillGetN(id) >= drillKey(d).codons.length; }
 function drillDoneCount(){
   var n = 0;
   DRILLS.forEach(function(d){ if (drillDone(d.id)) n++; });
@@ -2874,8 +2883,43 @@ function drillWhy(d, K, n, cod){
   if (d.mut && splitCodons(d.seq, 0)[n] === cod) return ' 바뀌기 전 서열의 코돈이다. 바뀐 mRNA 를 처음부터 다시 세 글자씩 끊으시오.';
   return '';
 }
+function drillTxN(d){ return (d && d.given === 'template') ? (Number(state.drillTx[d.id]) || 0) : 0; }
+function drillTxDone(d){ return !d || d.given !== 'template' || drillTxN(d) >= d.seq.length; }
+function drillTxTap(b){
+  var id = drillNowId(), d = drillById(id);
+  if (!d || d.given !== 'template' || BASES4.indexOf(b) < 0) return;
+  var i = drillTxN(d);
+  if (i >= d.seq.length) return;
+  var t = d.seq.charAt(i), want = DNA_TO_RNA[t];
+  if (b !== want){
+    showFb('fb_drill', 'bad', '옳지 않다. 주형 가닥 ' + (i + 1) + '번째 염기 <b>' + t + '</b>' + (hasJong(t) ? '과' : '와') +
+      ' 짝을 이루는 염기가 아니다.');
+    return;
+  }
+  state.drillTx[id] = i + 1;
+  saveState();
+  renderDrill();
+  showFb('fb_drill', 'good', (i + 1 >= d.seq.length)
+    ? '옳다. mRNA 를 완성하였다. 이제 개시코돈을 찾아 코돈표에서 차례로 탭하시오.'
+    : '옳다. 주형의 ' + t + ' 에는 ' + want + ' 가 온다.');
+  updateAll();
+}
+/* 주형 가닥 아래에 mRNA 칸 — 위아래가 짝을 이루게 같은 열에 둔다. 채울 칸 하나에만 now */
+function drillPairHtml(d){
+  var n = drillTxN(d), m = transcribe(d.seq);
+  var h = '<div class="strand pair"><span class="pend"><span>3′</span><span>5′</span></span>';
+  for (var i = 0; i < d.seq.length; i++){
+    h += '<span class="pcol"><span class="tile dna">' + d.seq.charAt(i) + '<span class="tno">' + (i + 1) + '</span></span>' +
+         '<span class="tile' + (i < n ? '' : (i === n ? ' now' : ' blank')) + '">' + (i < n ? m.charAt(i) : '&nbsp;') + '</span></span>';
+  }
+  return h + '<span class="pend"><span>5′</span><span>3′</span></span></div>';
+}
 function ctTapP(cod){
   var id = drillNowId(), d = drillById(id), K = drillKey(d), n = drillGetN(id);
+  if (!drillTxDone(d)){
+    showFb('fb_drill', 'info', '먼저 주형 가닥 아래의 mRNA 칸을 모두 채우시오.');
+    return;
+  }
   if (n >= K.codons.length){
     showFb('fb_drill', 'info', '이 서열의 해독을 마쳤다. 위에서 다른 연습을 고르시오.');
     return;
@@ -2918,18 +2962,30 @@ function renderDrill(){
   tabs += '<button type="button" class="chip' + (id === 'rand' ? ' on' : '') + '" onclick="newRandDrill()">🎲 새 서열 만들기</button>';
   setHTML('drillTabs', tabs);
 
-  var b = '<div class="taskbar">' + d.task + '</div>';
+  var tx = drillTxDone(d);
+  var b = '<div class="taskbar">' + ((d.given === 'template' && tx) ? d.task2 : d.task) + '</div>';
   if (d.mut){
     b += '<div class="dlabel">원래 mRNA</div>' + strandHtml(d.seq, 0, { mutPos:d.mut.pos }) +
          '<div class="stage-hint">원래 아미노산서열 — ' + decode(d.seq, 0).aas.join(' – ') + '</div>' +
          '<div class="datbox">바뀐 것 — <b>' + drillMutText(d) + '</b></div>';
   } else {
-    b += '<div class="dlabel">' + (d.given === 'template' ? 'DNA 주형 가닥' : 'mRNA') + '</div>' + drillStrandFlat(d.seq, d.given);
+    if (d.given === 'template'){
+      b += '<div class="dlabel">DNA 주형 가닥 (위) · 전사되는 mRNA (아래)</div>' + drillPairHtml(d);
+      if (!tx){
+        b += '<div class="chips">';
+        BASES4.forEach(function(x){ b += '<button type="button" class="chip base" onclick="drillTxTap(\'' + x + '\')">' + x + '</button>'; });
+        b += '</div>';
+      }
+    } else {
+      b += '<div class="dlabel">mRNA</div>' + drillStrandFlat(d.seq, d.given);
+    }
   }
   if (hl >= 1) b += '<div class="hintbox">💡 ' + d.hint + '</div>';
   if (hl >= 2){
-    if (d.given === 'template' || d.mut){
-      b += '<div class="hintbox">💡 ' + (d.mut ? '바뀐 mRNA' : '전사되는 mRNA') + ' — ' + drillStrandFlat(K.mrna, 'mrna') + '</div>';
+    if (d.mut){
+      b += '<div class="hintbox">💡 바뀐 mRNA — ' + drillStrandFlat(K.mrna, 'mrna') + '</div>';
+    } else if (d.given === 'template' && !tx){
+      b += '<div class="hintbox">💡 주형의 <b>' + d.seq.charAt(drillTxN(d)) + '</b> 에는 <b>' + DNA_TO_RNA[d.seq.charAt(drillTxN(d))] + '</b> 가 온다.</div>';
     } else {
       b += '<div class="hintbox">💡 개시코돈부터 세 글자씩 끊으면 — ' + strandHtml(K.mrna, K.start, {}) + '</div>';
     }
@@ -3249,7 +3305,7 @@ var SEC_DEF = {
   mut:   { qs:function(){ return Q_MUT; },  ask:true,  fb:'fb_mut',  msg:'⑤ 의 예상과 결과를 지웠다 — 다시 예상하시오.',
            run:function(){ state.mutGuess = {}; state.mutRun = {}; state.mutNow = null; } },
   drill: { ask:false, fb:'fb_drill', msg:'✏️ 의 해독을 지웠다 — 연습 1 부터 다시 푸시오.',
-           run:function(){ state.drillN = {}; state.drillHint = {}; state.drillNow = null; drillRand = null; drillRandN = 0; drillRandHint = 0; } },
+           run:function(){ state.drillN = {}; state.drillHint = {}; state.drillTx = {}; state.drillNow = null; drillRand = null; drillRandN = 0; drillRandHint = 0; } },
   prac:  { prac:true,  ask:false, fb:'', msg:'💪 의 문항을 지웠다.' },
   write: { write:true, ask:true,  fb:'', msg:'⑥ 에 적은 답안과 자기평가를 지웠다.' }
 };
@@ -3339,7 +3395,7 @@ function init(){
       }
     });
   }
-  ['zoomFill','codeRun','ctOpen','ctSeen','decN','autoF','mutGuess','mutRun','drillN','drillHint','qPick','pPick','ta','self'].forEach(function(k){
+  ['zoomFill','codeRun','ctOpen','ctSeen','decN','autoF','mutGuess','mutRun','drillN','drillHint','drillTx','qPick','pPick','ta','self'].forEach(function(k){
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   /* ★범위 밖의 값·없는 이름은 걸러 낸다 — 저장분이 망가져도 화면이 비지 않게 한다 */
@@ -3377,6 +3433,11 @@ function init(){
     var v = state.drillHint[k];
     if (!drillById(k) || k === 'rand' || (v !== 1 && v !== 2)) delete state.drillHint[k];
   });
+  Object.keys(state.drillTx).forEach(function(k){
+    var d = drillById(k), v = state.drillTx[k];
+    if (!d || d.given !== 'template' || typeof v !== 'number' || v !== Math.floor(v) || v < 1 || v > d.seq.length) delete state.drillTx[k];
+  });
+  Object.keys(state.drillN).forEach(function(k){ if (!drillTxDone(drillById(k))) delete state.drillN[k]; });   /* 전사 전엔 해독이 없다 */
   if (!drillById(state.drillNow)) state.drillNow = null;      /* 🎲 은 저장되지 않으므로 여기서 걸러진다 */
   var cl = Number(state.codeLast);
   state.codeLast = (CODE_SIZES.indexOf(cl) >= 0) ? cl : null;
