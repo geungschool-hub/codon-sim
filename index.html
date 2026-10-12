@@ -241,6 +241,12 @@ table.t.codetbl td.q{background:var(--yellow-bg);font-weight:700;}
 }
 .tile .tno{font-size:10px;font-weight:600;color:#98A0AC;}
 .tile.mut{background:var(--amber-bg);border-color:var(--amber);color:var(--amber-ink);}
+.mut-legend{font-size:14px;color:var(--sub);margin:6px 2px 0;}
+.mut-legend .lg{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px;}
+.mut-legend .lg-mark{background:var(--amber-bg);border:2px solid var(--amber);}
+.mut-legend .lg-diff{background:var(--prot);}
+table.t.mut-sum{margin-top:12px;width:100%;min-width:0;}
+.mt-band,.mt-aa,.mt-del{pointer-events:none;}   /* ⑤ 그림 — 누를 것이 없다(검사가 class 로 센다) */
 .tile.changed{background:var(--prot-bg);border-color:var(--prot);color:var(--prot-ink);}
 
 /* 폴리펩타이드 구슬 — 색은 하나(자홍)로 둔다. 아미노산마다 색을 주면 「색=종류」가 하나 더 생긴다. */
@@ -663,23 +669,23 @@ html:not(.unlocked) #draftGate{display:flex;}
   <!-- ══ ⑤ 염기 하나가 바뀌면 (교과서 62쪽 해 보기 3) ══ -->
   <div class="card split" id="cardMut">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-      <h2 class="teal" style="flex:1 1 300px;margin-bottom:0;">⑤ 염기 하나가 바뀌면<span class="yr">교과서 62쪽 해 보기 3</span></h2>
-      <span class="tag" id="mutProg">확인한 자리 0 / 3</span>
+      <h2 class="teal" style="flex:1 1 300px;margin-bottom:0;">⑤ 염기서열이 바뀌면 — 치환 · 결실 · 중복<span class="yr">교과서 62쪽 해 보기 3</span></h2>
+      <span class="tag" id="mutProg">확인한 변화 0 / 6</span>
     </div>
     <div class="panes">
       <div class="pane-l">
-        <h3 style="margin-top:0;">원래 서열과 바뀐 서열</h3>
-        <div class="tbl-outer" style="margin-top:0;">
-          <table class="t" id="mutTable"></table>
-        </div>
-        <p class="stage-hint">세 자리 모두 <b>염기 하나만</b> 바뀐 것이다. 그런데 결과는 같지 않다.</p>
-        <div id="mutSummary"></div>
+        <div class="stage-wrap"><svg class="stage" id="mutStage" viewBox="0 0 900 256" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="원래 mRNA 와 바뀐 mRNA 를 코돈별로 나란히 놓고 아래에 아미노산을 이은 그림"></svg></div>
+        <div class="mut-legend" id="mutLegend"></div>
+        <div class="ctab-outer" id="codonTable5" style="margin-top:10px;"></div>
       </div>
       <div class="pane-r">
         <div class="pr-do">
-          <div class="taskbar">자리마다 결과를 먼저 예상한 뒤 🔬 로 확인하시오. (1번째 염기부터 읽는다)</div>
+          <div class="taskbar">변화를 하나 고르고, 그림의 바뀐 서열을 코돈표로 읽어 결과를 예상한 뒤 🔬 로 확인하시오. (1번째 염기부터 읽는다)</div>
+          <div class="chips" id="mutTabs"></div>
           <div id="mutRows"></div>
           <div class="msg hide" id="fb_mut"></div>
+          <div id="mutSummary"></div>
         </div>
         <div class="pr-q">
           <h3>결론 — 무엇을 알 수 있는가</h3>
@@ -854,39 +860,88 @@ function transcribe(dna){
 }
 var DEMO_AA = decode(DEMO_MRNA, DEMO_START).aas;   /* 메싸이오닌 · 류신 · 알라닌 · 발린 — 계산으로 얻는다 */
 
-/* ── 교과서 62쪽 해 보기 3 — 한 염기가 바뀌면 ────────────────────
-   ★10번은 교과서 문항 그대로다. 12번·17번은 「같은 한 염기 치환인데 결과가 갈린다」를
-     보이기 위해 같은 서열 위에서 고른 자리다(값은 검사가 계산으로 확인한다). */
+/* ── ⑤ 염기서열이 바뀌면 — 교과서 62쪽 해 보기 3(치환) + 결실 · 중복 ────────────────────
+   ★치환 10번은 교과서 문항 그대로다. 12번·17번은 「같은 한 염기 치환인데 결과가 갈린다」를
+     보이기 위해 같은 서열 위에서 고른 자리다.
+   ★결실·중복은 교사 요청(2026-10-12 「결실도 일어나고 중복도 일어나고」)으로 더했다. 수행①의 (가) 중복 · (나) 결실과 잇는다.
+     이 24염기 조각에서 **종결코돈이 생기지 않는** 자리를 골라 「읽기틀이 밀린다」만 보이게 했다
+     (밀린 틀이 종결코돈을 만나면 「일찍 끝남」과 갈래가 겹친다). 세 염기 결실은 코돈 하나와 딱 맞는 자리다.
+   ★id 는 저장 키다 — 치환 셋은 예전 저장분('10'·'12'·'17')과 같게 둔다. 값은 검사가 계산으로 확인한다. */
 var MUTS = [
-  { pos:10, from:'G', to:'A', kind:'change' },   /* GUG → AUG  발린 → 메싸이오닌 */
-  { pos:12, from:'G', to:'A', kind:'same'   },   /* GUG → GUA  발린 → 발린 */
-  { pos:17, from:'C', to:'A', kind:'stop'   }    /* UCG → UAG  세린 → 종결코돈 */
+  { id:'10',  type:'sub', pos:10, len:1, from:'G',   to:'A', kind:'change' },   /* GUG → AUG  발린 → 메싸이오닌 */
+  { id:'12',  type:'sub', pos:12, len:1, from:'G',   to:'A', kind:'same'   },   /* GUG → GUA  발린 → 발린 */
+  { id:'17',  type:'sub', pos:17, len:1, from:'C',   to:'A', kind:'stop'   },   /* UCG → UAG  세린 → 종결코돈 */
+  { id:'d14', type:'del', pos:14, len:1, from:'C',           kind:'shift'  },   /* 5번째 코돈부터 AUU CGA AUG … */
+  { id:'u7',  type:'dup', pos:7,  len:1, from:'A',           kind:'shift'  },   /* 3번째 코돈부터 AAA CGU GAC … */
+  { id:'d10', type:'del', pos:10, len:3, from:'GUG',         kind:'drop'   }    /* 4번째 코돈 GUG 가 통째로 빠짐 → 발린만 빠짐 */
 ];
-var MUT_CHOICES = ['아미노산이 다른 아미노산으로 바뀐다', '아미노산서열이 바뀌지 않는다', '번역이 예정보다 일찍 끝난다'];
-function mutKindIndex(kind){ return kind === 'change' ? 0 : (kind === 'same' ? 1 : 2); }
-function mutById(pos){
-  for (var i = 0; i < MUTS.length; i++){ if (MUTS[i].pos === Number(pos)) return MUTS[i]; }
+var MUT_KINDS = ['change', 'same', 'stop', 'shift', 'drop'];
+var MUT_CHOICES = ['아미노산 하나가 다른 아미노산으로 바뀐다', '아미노산서열이 바뀌지 않는다', '번역이 예정보다 일찍 끝난다',
+                   '바뀐 자리부터 뒤의 아미노산이 모두 달라진다', '아미노산 하나만 빠지고 나머지는 그대로이다'];
+var MUT_TYPE_NAME = { sub:'치환', del:'결실', dup:'중복' };
+function mutKindIndex(kind){ return MUT_KINDS.indexOf(kind); }
+function mutById(id){
+  if (id === null || id === undefined) return null;
+  for (var i = 0; i < MUTS.length; i++){ if (MUTS[i].id === String(id)) return MUTS[i]; }
   return null;
 }
+/* 자리 이름 — 탭 꼬리표(짧게)와 설명(길게) */
+function mutRange(m){ return m.len > 1 ? m.pos + '~' + (m.pos + m.len - 1) : String(m.pos); }
+function mutShort(m){ return MUT_TYPE_NAME[m.type] + ' ' + mutRange(m) + '번'; }
+function mutLong(m){
+  if (m.type === 'sub') return m.pos + '번째 염기 ' + m.from + ' → ' + m.to + ' (치환)';
+  if (m.type === 'del') return mutRange(m) + '번째 염기 ' + m.from + '가 빠진다 (결실)';
+  return mutRange(m) + '번째 염기 ' + m.from + '가 한 번 더 들어간다 (중복)';
+}
 /* pos 는 1부터 센 자리다 */
-function mutSeq(pos){
-  var m = mutById(pos);
+function mutSeq(id){
+  var m = mutById(id);
   if (!m) return MRNA;
-  return MRNA.substring(0, m.pos - 1) + m.to + MRNA.substring(m.pos);
+  var a = m.pos - 1;
+  if (m.type === 'sub') return MRNA.substring(0, a) + m.to + MRNA.substring(a + 1);
+  if (m.type === 'del') return MRNA.substring(0, a) + MRNA.substring(a + m.len);
+  return MRNA.substring(0, a + m.len) + MRNA.substring(a, a + m.len) + MRNA.substring(a + m.len);
 }
-function mutResult(pos){ return decode(mutSeq(pos), 0); }
+function mutResult(id){ return decode(mutSeq(id), 0); }
 /* 바뀐 결과가 실제로 어느 갈래인지 **계산으로** 판정한다 — kind 를 손으로 적어 둔 것과 맞는지 검사가 문다 */
-function mutKindOf(pos){
-  var base = decode(MRNA, 0), now = mutResult(pos);
-  if (now.stopAt >= 0 && base.stopAt < 0) return 'stop';
-  if (now.aas.join('/') === base.aas.join('/')) return 'same';
-  return 'change';
+function mutKindOf(id){
+  var base = decode(MRNA, 0).aas, d = mutResult(id), now = d.aas, i;
+  if (d.stopAt >= 0 && decode(MRNA, 0).stopAt < 0) return 'stop';
+  if (now.join('/') === base.join('/')) return 'same';
+  if (now.length === base.length){
+    var diff = 0;
+    for (i = 0; i < now.length; i++) if (now[i] !== base[i]) diff++;
+    if (diff === 1) return 'change';
+  }
+  if (now.length === base.length - 1){
+    for (i = 0; i < base.length; i++){
+      if (base.slice(0, i).concat(base.slice(i + 1)).join('/') === now.join('/')) return 'drop';
+    }
+  }
+  return 'shift';
 }
-/* 바뀐 아미노산의 자리(0부터). 없으면 -1 */
-function mutChangedIndex(pos){
-  var base = decode(MRNA, 0), now = mutResult(pos), n = Math.min(base.aas.length, now.aas.length);
+/* 바뀐 아미노산의 자리(0부터). 없으면 -1 — drop 이면 빠진 자리, shift 면 달라지기 시작한 자리 */
+function mutChangedIndex(id){
+  var base = decode(MRNA, 0), now = mutResult(id), n = Math.min(base.aas.length, now.aas.length);
   for (var i = 0; i < n; i++){ if (base.aas[i] !== now.aas[i]) return i; }
   return -1;
+}
+/* ⑤ 그림의 아래 행 — 코돈 열(원래 행과 같은 열에 맞춘다).
+   ★세 염기 결실(drop)은 빠진 코돈 자리를 빈 열로 남겨 **뒤의 코돈이 원래와 같은 열**에 서게 한다 — 「하나만 빠졌다」가 눈에 보인다.
+   ★조각 끝에 세 글자가 안 되는 자투리는 part:true 로 남긴다(다음 염기와 묶일 것이라 해독하지 않는다).
+   각 열: { cod, from(바뀐 서열에서의 시작 자리, 0부터), gap, part } */
+function mutCols(id){
+  var m = mutById(id), seq = mutSeq(id), cols = [], i;
+  for (i = 0; i + 3 <= seq.length; i += 3) cols.push({ cod:seq.substr(i, 3), from:i });
+  if (i < seq.length) cols.push({ cod:seq.substring(i), from:i, part:true });
+  if (m && m.kind === 'drop') cols.splice(mutChangedIndex(id), 0, { cod:m.from, from:-1, gap:true });
+  return cols;
+}
+/* 바뀐 서열의 i번째 염기(0부터)가 이 변화로 「바뀐/더해진」 염기인가 */
+function mutIsMarked(m, i){
+  if (m.type === 'sub') return i === m.pos - 1;
+  if (m.type === 'dup') return i >= m.pos - 1 + m.len && i < m.pos - 1 + 2 * m.len;
+  return false;
 }
 
 /* ── ①-2 묶음 크기 → 지정할 수 있는 가짓수 ── */
@@ -1000,7 +1055,20 @@ var Q_MUT = [
         '옳지 않다. 아미노산이 바뀌면 단백질의 기능이 달라질 수 있다.',
         ''],
     ex:'GUG와 GUA는 모두 발린을 지정한다. 유전부호에는 중복성이 있어서, ' +
-       '<b>코돈의 세 번째 염기가 바뀌어도 같은 아미노산이 지정되는 일</b>이 자주 있다.' }
+       '<b>코돈의 세 번째 염기가 바뀌어도 같은 아미노산이 지정되는 일</b>이 자주 있다.' },
+  { id:'m2',
+    q:'염기 하나가 빠지면 그 뒤의 아미노산이 모두 달라지는데, 세 염기가 함께 빠지면 아미노산 하나만 빠진다. 그 까닭은 무엇인가?',
+    ch:['세 염기가 빠지면 그 자리에 종결코돈이 생기기 때문이다.',
+        '코돈은 세 염기씩 읽히므로, 세 염기가 빠지면 뒤의 읽기틀이 그대로 유지되기 때문이다.',
+        '염기 하나가 빠지면 그 뒤의 염기도 모두 다른 염기로 바뀌기 때문이다.',
+        '세 염기가 빠지면 라이보솜이 빠진 자리를 건너뛰고 다시 처음부터 mRNA 를 읽어 나가기 때문이다.'],
+    a:1,
+    no:['옳지 않다. 세 염기 결실에서는 종결코돈이 생기지 않았고, 뒤의 아미노산이 원래와 같았다.',
+        '',
+        '옳지 않다. 뒤의 염기는 그대로이다. 한 칸씩 당겨졌을 뿐인데 세 염기씩 묶이는 자리가 모두 달라진다.',
+        '옳지 않다. mRNA 는 처음부터 끝까지 한 방향으로 세 염기씩 이어서 읽힌다.'],
+    ex:'코돈은 겹치지 않고 사이에 공백도 없이 세 염기씩 읽힌다. 염기 하나가 빠지거나 더해지면 그 뒤의 묶음이 모두 달라진다(<b>읽기틀이 밀린다</b>). ' +
+       '세 염기가 함께 빠지면 코돈 하나만 없어지고 <b>뒤의 읽기틀은 그대로</b>이다.' }
 ];
 
 var PRACTICE = [
@@ -1152,7 +1220,7 @@ var STEPS = [
   { key:'zoom', no:'②',  name:'염기서열에 집중하기', sub:'주형 → mRNA → 아미노산', cls:'dna' },
   { key:'find', no:'③',  name:'코돈표',        sub:'세 축 · 개시·지정·종결', cls:''     },
   { key:'dec',  no:'④',  name:'해독',          sub:'읽기틀·8코돈',       cls:'prot' },
-  { key:'mut',  no:'⑤',  name:'염기 하나가 바뀌면', sub:'치환 3자리',    cls:'teal' }
+  { key:'mut',  no:'⑤',  name:'염기서열이 바뀌면', sub:'치환·결실·중복',    cls:'teal' }
 ];
 
 function freshState(){
@@ -1169,9 +1237,9 @@ function freshState(){
     autoF:{},          /* ④ 단추로 끊어 본 읽기틀 {'1':true,'2':true} */
     hintCodon:null,    /* ④ 💡 로 공개한 코돈 — **단수**다 */
     hintUsed:0,
-    mutGuess:{},       /* ⑤ 자리마다 고른 예상 {'10':0|1|2,…} */
-    mutRun:{},         /* ⑤ 바꾸어 확인한 자리 {'10':true,…} */
-    mutNow:null,       /* ⑤ 지금 화면에 적용된 자리 */
+    mutGuess:{},       /* ⑤ 변화마다 고른 예상 {id: MUT_CHOICES 번호} */
+    mutRun:{},         /* ⑤ 바꾸어 확인한 변화 {id:true} */
+    mutNow:null,       /* ⑤ 지금 고른 변화의 id (그림 아래 행) */
     qPick:{},          /* ①②③④⑤ 결론 문항 */
     pPick:{},          /* 💪 더 풀어 보기 */
     ta:{},             /* ⑥ 서술형 */
@@ -1256,7 +1324,7 @@ function decDoneCount(){
 }
 function mutDoneCount(){
   var n = 0;
-  MUTS.forEach(function(m){ if (state.mutRun[String(m.pos)]) n++; });
+  MUTS.forEach(function(m){ if (state.mutRun[m.id]) n++; });
   return n;
 }
 function stepDone(k){
@@ -2446,91 +2514,233 @@ function renderDec(){
   }
 }
 /* ══════════════════════════════════════════════════════════════
-   8. ⑤ 염기 하나가 바뀌면 (교과서 62쪽 해 보기 3)
+   8. ⑤ 염기서열이 바뀌면 — 치환 · 결실 · 중복 (교과서 62쪽 해 보기 3 + 확장)
    ★먼저 예상하게 한 뒤에 바꾸어 확인한다. 예상 전에 결과를 보여 주면 확인할 것이 없어진다.
+   ★교사 지시(2026-10-12): 「원래 서열을 코돈 별로 나눠서 큼직하게 그림으로 · 그 아래 아미노산서열도 코돈에 연결되게 ·
+     각 지시로 변하는 결과가 명확히 비교되게」 → 그림은 [원래] 행과 [고른 변화] 행 두 줄을 **같은 코돈 열**에 맞춰 쌓는다.
+     예상 전에는 아래 행 아미노산을 「?」 로 둔다. 확인하면 원래와 달라진 열에 자홍 띠가 위아래로 걸친다.
+   ★한 번에 한 변화만 다룬다(탭). 세 자리를 한꺼번에 늘어놓던 판은 오른쪽이 길고 서열을 손으로 세야 했다.
    ══════════════════════════════════════════════════════════════ */
-function guessMut(pos, i){
-  if (state.mutRun[String(pos)]) return;      /* 이미 확인한 자리는 예상을 바꾸지 않는다 */
-  state.mutGuess[String(pos)] = i;
+var MT = { x0:70, pitch:92, tw:26, tg:2, pad:4, top:[4, 136] };
+var MUT_RES_SHORT = { change:'아미노산 하나만 바뀜', same:'그대로', stop:'일찍 끝남', shift:'뒤가 모두 달라짐', drop:'아미노산 하나만 빠짐' };
+function curMutId(){
+  if (mutById(state.mutNow)) return String(state.mutNow);
+  for (var i = 0; i < MUTS.length; i++){ if (!state.mutRun[MUTS[i].id]) return MUTS[i].id; }
+  return MUTS[0].id;
+}
+function selMut(id){
+  var m = mutById(id);
+  if (!m) return;
+  state.mutNow = m.id;
+  saveState();
+  renderMut();
+  showFb('fb_mut', 'info', state.mutRun[m.id] ? mutBody(m.id) : '');
+}
+function guessMut(id, i){
+  var m = mutById(id);
+  if (!m || state.mutRun[m.id]) return;      /* 이미 확인한 변화는 예상을 바꾸지 않는다 */
+  state.mutGuess[m.id] = i;
+  state.mutNow = m.id;
   saveState();
   renderMut();
 }
-function runMut(pos){
-  var m = mutById(pos);
+function runMut(id){
+  var m = mutById(id);
   if (!m) return;
-  var g = state.mutGuess[String(pos)];
+  var g = state.mutGuess[m.id];
   if (g === undefined){
     showFb('fb_mut', 'warn', '먼저 결과를 예상하시오.');
     return;
   }
-  state.mutRun[String(pos)] = true;
-  state.mutNow = Number(pos);
+  state.mutRun[m.id] = true;
+  state.mutNow = m.id;
   saveState();
   renderMut();
-  var kind = mutKindOf(pos), right = (g === mutKindIndex(kind));
-  var D0 = decode(MRNA, 0), D1 = mutResult(pos), ci = mutChangedIndex(pos);
-  var body;
-  if (kind === 'change'){
-    body = (ci + 1) + '번째 아미노산이 <b>' + D0.aas[ci] + '</b>에서 <b>' + D1.aas[ci] + '</b>으로 바뀌었다. ' +
-           '코돈이 ' + D0.codons[ci] + '에서 ' + D1.codons[ci] + '로 바뀌었기 때문이다.';
-  } else if (kind === 'same'){
-    body = '아미노산서열이 바뀌지 않았다. 코돈은 ' + D0.codons[Math.floor((m.pos - 1) / 3)] + '에서 ' +
-           D1.codons[Math.floor((m.pos - 1) / 3)] + '로 바뀌었지만, <b>두 코돈이 같은 아미노산을 지정한다.</b>';
-  } else {
-    body = (D1.stopAt + 1) + '번째 코돈이 <b>' + D1.codons[D1.stopAt] + '</b>로 바뀌어 종결코돈이 되었다. ' +
-           '아미노산 <b>' + D1.aas.length + '개</b>에서 번역이 끝난다.';
-  }
+  var right = (g === mutKindIndex(mutKindOf(m.id)));
   showFb('fb_mut', right ? 'good' : 'bad',
-    (right ? '<b>예상대로이다.</b> ' : '<b>예상과 다르다.</b> ') + body);
+    (right ? '<b>예상대로이다.</b> ' : '<b>예상과 다르다.</b> ') + mutBody(m.id));
   updateAll();
 }
-function renderMut(){
-  var h = '';
-  MUTS.forEach(function(m){
-    var key = String(m.pos), ran = !!state.mutRun[key], g = state.mutGuess[key];
-    h += '<div class="slotrow' + (ran ? ' filled' : '') + '">' +
-         '<div class="slabel">' + (ran ? '✅ ' : '') + m.pos + '번째 염기 ' + m.from + ' → ' + m.to + '</div>';
-    h += '<div style="font-size:14.5px;color:var(--sub);">예상 — 어떤 결과가 나타나겠는가?</div>';
-    h += '<div class="chips" style="margin:4px 0 0;">';
-    MUT_CHOICES.forEach(function(c, i){
-      var on = (g === i);
-      h += '<button type="button" class="chip' + (on ? (ran ? ' ok' : ' on') : '') + '"' +
-           (ran ? ' disabled' : '') + ' onclick="guessMut(' + m.pos + ',' + i + ')">' + c + '</button>';
-    });
-    h += '</div>';
-    if (!ran){
-      h += '<div class="btnrow"><button type="button" class="btn teal' + (g === undefined ? ' ghost' : '') +
-           '" onclick="runMut(' + m.pos + ')">🔬 바꾸어 확인하기</button></div>';
-    }
-    h += '</div>';
+/* 확인한 결과의 설명 — 피드백과, 확인한 탭을 다시 골랐을 때 같은 글을 쓴다 */
+function mutBody(id){
+  var m = mutById(id), kind = mutKindOf(id);
+  var D0 = decode(MRNA, 0), D1 = mutResult(id), ci = mutChangedIndex(id);
+  if (kind === 'change'){
+    return (ci + 1) + '번째 아미노산이 <b>' + D0.aas[ci] + '</b>에서 <b>' + D1.aas[ci] + '</b>' +
+           (hasJong(D1.aas[ci]) ? '으로' : '로') + ' 바뀌었다. ' +
+           '코돈이 ' + D0.codons[ci] + '에서 ' + D1.codons[ci] + '로 바뀌었기 때문이다.';
+  }
+  if (kind === 'same'){
+    var k = Math.floor((m.pos - 1) / 3);
+    return '아미노산서열이 바뀌지 않았다. 코돈은 ' + D0.codons[k] + '에서 ' + D1.codons[k] +
+           '로 바뀌었지만, <b>두 코돈이 같은 아미노산을 지정한다.</b>';
+  }
+  if (kind === 'stop'){
+    return (D1.stopAt + 1) + '번째 코돈이 <b>' + D1.codons[D1.stopAt] + '</b>로 바뀌어 종결코돈이 되었다. ' +
+           '아미노산 <b>' + D1.aas.length + '개</b>에서 번역이 끝난다.';
+  }
+  if (kind === 'shift'){
+    var rest = mutSeq(id).length % 3;
+    return (m.type === 'del' ? '염기가 하나 빠져 그 뒤의 염기가 한 칸씩 당겨졌다. '
+                             : '염기가 하나 더 들어가 그 뒤의 염기가 한 칸씩 밀렸다. ') +
+           '세 염기씩 묶이는 자리(읽기틀)가 바뀌어 <b>' + (ci + 1) + '번째 아미노산부터 뒤가 모두 달라졌다.</b>' +
+           (rest ? ' 조각 끝에 남은 염기 ' + rest + '개는 뒤에 이어지는 염기와 묶인다.' : '');
+  }
+  return '코돈 하나(' + m.from + ')가 통째로 빠져 ' + (ci + 1) + '번째 아미노산 <b>' + D0.aas[ci] + '</b>만 빠졌다. ' +
+         '<b>읽기틀은 그대로</b>여서 나머지 아미노산은 원래와 같다.';
+}
+/* ── ⑤ 그림 ── */
+function mtGx(c){ return MT.x0 + c * MT.pitch; }
+function mtTx(c, k){ return mtGx(c) + MT.pad + k * (MT.tw + MT.tg); }
+function mtGw(){ return MT.pad * 2 + MT.tw * 3 + MT.tg * 2; }
+function mtCx(c){ return mtGx(c) + mtGw() / 2; }
+function mtTile(x, T, ch, st){
+  st = st || {};
+  var fill = st.mark ? '#FDF0E3' : '#fff', stroke = st.mark ? '#E67E22' : C_RNA, ink = st.mark ? '#8A4B08' : C_RNA;
+  return '<rect x="' + x + '" y="' + (T + 22) + '" width="' + MT.tw + '" height="44" rx="6" fill="' + fill + '" stroke="' + stroke +
+         '" stroke-width="' + (st.mark ? 2.6 : 1.4) + '"' + (st.dash ? ' stroke-dasharray="4 3"' : '') + '/>' +
+         '<text x="' + (x + MT.tw / 2) + '" y="' + (T + 53) + '" text-anchor="middle" font-size="26" font-weight="800" ' +
+         'font-family="Consolas,Menlo,monospace" fill="' + ink + '">' + ch + '</text>';
+}
+var MT_PILL = { orig:['#FCE4EC', C_PROT, '#8E1147', ''], diff:[C_PROT, C_PROT, '#fff', ''],
+                unk:['#fff', '#A9B1BD', '#8A93A0', ' stroke-dasharray="4 3"'], gap:['#fff', '#A9B1BD', '#8A93A0', ' stroke-dasharray="4 3"'],
+                stop:['#333', '#333', '#fff', ''] };
+function mtPill(c, T, label, st){
+  var w = 86, x = mtCx(c) - w / 2, y = T + 82, s = MT_PILL[st];
+  /* ★다섯 글자 이름(아스파라진·메싸이오닌·페닐알라닌)은 칸을 넘친다 — 넷 넘으면 글자 폭을 칸에 맞춘다 */
+  var fit = (String(label).length > 4) ? ' textLength="78" lengthAdjust="spacingAndGlyphs"' : '';
+  return '<line x1="' + mtCx(c) + '" y1="' + (T + 70) + '" x2="' + mtCx(c) + '" y2="' + y + '" stroke="' + s[1] + '" stroke-width="2"' + s[3] + '/>' +
+         '<rect class="mt-aa ' + st + '" x="' + x + '" y="' + y + '" width="' + w + '" height="34" rx="17" fill="' + s[0] + '" stroke="' + s[1] + '" stroke-width="1.6"' + s[3] + '/>' +
+         '<text x="' + mtCx(c) + '" y="' + (y + 23) + '" text-anchor="middle" font-size="16" font-weight="700" fill="' + s[2] + '"' + fit + '>' + label + '</text>';
+}
+function mtGroup(c, T, op, dash){
+  return '<rect x="' + mtGx(c) + '" y="' + (T + 18) + '" width="' + mtGw() + '" height="52" rx="9" fill="' + (c % 2 ? '#E7EBF0' : '#F2F4F7') +
+         '"' + (dash ? ' stroke="#A9B1BD" stroke-dasharray="4 3"' : '') + (op < 1 ? ' opacity="' + op + '"' : '') + '/>';
+}
+/* 아래 행의 열마다 지정되는 아미노산 — 빈 열·자투리·종결코돈과 그 뒤는 null. stopCol 은 종결코돈 열(없으면 -1) */
+function mutColAAs(id){
+  var cols = mutCols(id), D1 = mutResult(id), aas = [], ai = 0, stopCol = -1;
+  cols.forEach(function(col, ci){
+    if (col.gap || col.part || stopCol >= 0){ aas.push(null); return; }
+    if (isStopCodon(col.cod)){ stopCol = ci; aas.push(null); return; }
+    aas.push(D1.aas[ai++]);
   });
+  return { cols:cols, aas:aas, stopCol:stopCol };
+}
+function mutStageSvg(id){
+  var m = mutById(id), ran = !!state.mutRun[m.id];
+  var D0 = decode(MRNA, 0), A = mutColAAs(m.id), cols = A.cols, stopCol = A.stopCol;
+  var T0 = MT.top[0], T1 = MT.top[1], h = '', c, k, i;
+  /* 확인한 뒤 — 원래와 달라진 열에 자홍 띠(위아래 두 행에 걸친다) */
+  if (ran){
+    cols.forEach(function(col, ci){
+      var differ = col.gap || ci === stopCol || (A.aas[ci] !== null && A.aas[ci] !== D0.aas[ci]);
+      if (differ) h += '<rect class="mt-band" x="' + (mtGx(ci) - 2) + '" y="2" width="' + (mtGw() + 4) + '" height="252" rx="10" fill="' + C_PROT + '" opacity=".09"/>';
+    });
+  }
+  /* 행 이름 */
+  h += '<text x="6" y="' + (T0 + 51) + '" font-size="19" font-weight="800" fill="#333">원래</text>' +
+       '<text x="6" y="' + (T0 + 104) + '" font-size="13" fill="#8A93A0">아미노산</text>';
+  h += '<text x="6" y="' + (T1 + 44) + '" font-size="19" font-weight="800" fill="#0F766E">' + MUT_TYPE_NAME[m.type] + '</text>' +
+       '<text x="6" y="' + (T1 + 66) + '" font-size="15" font-weight="700" fill="#555">' + mutRange(m) + '번</text>' +
+       '<text x="6" y="' + (T1 + 104) + '" font-size="13" fill="#8A93A0">아미노산</text>';
+  /* 원래 행 — 염기 번호 · 코돈 · 아미노산. 이번 변화가 건드리는 염기는 주황 */
+  for (c = 0; c < D0.codons.length; c++){
+    h += mtGroup(c, T0, 1, false);
+    for (k = 0; k < 3; k++){
+      i = c * 3 + k;
+      var on = (i >= m.pos - 1 && i < m.pos - 1 + m.len);
+      h += '<text x="' + (mtTx(c, k) + MT.tw / 2) + '" y="' + (T0 + 14) + '" text-anchor="middle" font-size="11" font-weight="' + (on ? 800 : 600) +
+           '" fill="' + (on ? '#8A4B08' : '#98A0AC') + '">' + (i + 1) + '</text>';
+      h += mtTile(mtTx(c, k), T0, MRNA.charAt(i), { mark:on });
+    }
+    h += mtPill(c, T0, D0.aas[c], 'orig');
+  }
+  /* 바뀐 행 */
+  cols.forEach(function(col, ci){
+    var after = (stopCol >= 0 && ci > stopCol), op = (col.part || after) ? 0.35 : 1;
+    h += mtGroup(ci, T1, op, col.gap || col.part);
+    var g = '';
+    for (k = 0; k < col.cod.length; k++){
+      if (col.gap){
+        g += '<text x="' + (mtTx(ci, k) + MT.tw / 2) + '" y="' + (T1 + 53) + '" text-anchor="middle" font-size="26" font-weight="800" ' +
+             'font-family="Consolas,Menlo,monospace" fill="#A9B1BD" text-decoration="line-through">' + col.cod.charAt(k) + '</text>';
+        continue;
+      }
+      var j = col.from + k, mk = mutIsMarked(m, j);
+      if (mk) g += '<text x="' + (mtTx(ci, k) + MT.tw / 2) + '" y="' + (T1 + 14) + '" text-anchor="middle" font-size="12" font-weight="800" fill="#8A4B08">' +
+                   (m.type === 'dup' ? '+' + col.cod.charAt(k) : (j + 1)) + '</text>';
+      g += mtTile(mtTx(ci, k), T1, col.cod.charAt(k), { mark:mk, dash:col.part });
+    }
+    h += (op < 1) ? '<g opacity="' + op + '">' + g + '</g>' : g;
+    if (col.gap){ h += mtPill(ci, T1, '빠짐', 'gap'); return; }
+    if (col.part || after) return;
+    if (!ran){ h += mtPill(ci, T1, '?', 'unk'); return; }
+    if (ci === stopCol){ h += mtPill(ci, T1, '종결', 'stop'); return; }
+    h += mtPill(ci, T1, A.aas[ci], A.aas[ci] === D0.aas[ci] ? 'orig' : 'diff');
+  });
+  /* 한 염기 결실 — 빠진 자리에 표지 */
+  if (m.type === 'del' && m.kind !== 'drop'){
+    var jd = m.pos - 1, cd = Math.floor(jd / 3), kd = jd % 3;
+    var xd = (kd === 0) ? mtGx(cd) - 2 : mtTx(cd, kd) - MT.tg / 2;
+    h += '<line class="mt-del" x1="' + xd + '" y1="' + (T1 + 16) + '" x2="' + xd + '" y2="' + (T1 + 72) + '" stroke="#E67E22" stroke-width="3.5"/>' +
+         '<text x="' + xd + '" y="' + (T1 + 13) + '" text-anchor="middle" font-size="12" font-weight="800" fill="#8A4B08">▼ ' + m.from + ' 빠짐</text>';
+  }
+  return h;
+}
+function ctTap5(cod){            /* ⑤ 코돈표 — 찾은 칸 표시만 한다(채점 없음 · 저장 안 함) */
+  ctClearAll('c5', 'cur');
+  ctMark('c5', cod, 'cur');
+}
+function renderMut(){
+  var cur = curMutId(), m = mutById(cur), ran = !!state.mutRun[cur], g = state.mutGuess[cur];
+  var tabs = '';
+  MUTS.forEach(function(x){
+    var r = !!state.mutRun[x.id], on = (x.id === cur);
+    tabs += '<button type="button" class="chip' + (on ? ' on' : (r ? ' ok' : '')) + '" onclick="selMut(\'' + x.id + '\')">' +
+            (r ? '✅ ' : '') + mutShort(x) + '</button>';
+  });
+  setHTML('mutTabs', tabs);
+
+  var h = '<div class="slotrow' + (ran ? ' filled' : '') + '">' +
+          '<div class="slabel">' + (ran ? '✅ ' : '') + mutLong(m) + '</div>' +
+          '<div style="font-size:15px;color:var(--sub);">예상 — 어떤 결과가 나타나겠는가?</div>' +
+          '<div class="chips" style="margin:4px 0 0;">';
+  MUT_CHOICES.forEach(function(c, i){
+    var on = (g === i);
+    h += '<button type="button" class="chip' + (on ? (ran ? ' ok' : ' on') : '') + '"' +
+         (ran ? ' disabled' : '') + ' onclick="guessMut(\'' + cur + '\',' + i + ')">' + c + '</button>';
+  });
+  h += '</div>';
+  if (!ran){
+    h += '<div class="btnrow"><button type="button" class="btn teal' + (g === undefined ? ' ghost' : '') +
+         '" onclick="runMut(\'' + cur + '\')">🔬 바꾸어 확인하기</button></div>';
+  }
+  h += '</div>';
   setHTML('mutRows', h);
 
-  var t = '<thead><tr><th>무엇</th><th class="rna">mRNA 서열 (1번째 염기부터 읽는다)</th><th class="prot">아미노산서열</th></tr></thead><tbody>';
-  var D0 = decode(MRNA, 0);
-  t += '<tr><td>원래</td><td class="seqcell">' + MRNA + '</td><td class="keep">' + D0.aas.join(' – ') + '</td></tr>';
-  MUTS.forEach(function(m){
-    if (!state.mutRun[String(m.pos)]) return;
-    var D = mutResult(m.pos), seq = mutSeq(m.pos), kind = mutKindOf(m.pos);
-    var marked = seq.substring(0, m.pos - 1) + '<b style="color:var(--prot);">' + m.to + '</b>' + seq.substring(m.pos);
-    var res = (kind === 'stop')
-      ? D.aas.join(' – ') + ' <b>🛑 종결</b>'
-      : D.aas.join(' – ');
-    t += '<tr><td>' + m.pos + '번째 ' + m.from + '→' + m.to + '</td>' +
-         '<td class="seqcell">' + marked + '</td>' +
-         '<td class="' + (kind === 'same' ? 'keep' : 'out') + '">' + res + '</td></tr>';
-  });
-  t += '</tbody>';
-  var el = document.getElementById('mutTable');
-  if (el) el.innerHTML = t;
+  setHTML('mutStage', mutStageSvg(cur));
+  setHTML('mutLegend', '<span class="lg lg-mark"></span>바뀐 염기 &nbsp; <span class="lg lg-diff"></span>원래와 달라진 아미노산 &nbsp; 흐린 칸 = 번역되지 않는 부분');
 
-  setHTML('mutSummary', (mutDoneCount() === MUTS.length)
-    ? '<div class="verdict-card good"><div class="vh">🎉 한 염기가 바뀌었을 뿐인데 결과는 셋으로 갈렸다</div>' +
-      '<div class="vb">아미노산이 <b>바뀌는</b> 경우, <b>바뀌지 않는</b> 경우, 번역이 <b>일찍 끝나는</b> 경우가 모두 나타났다. ' +
-      '바뀌지 않는 경우가 생기는 까닭은 <b>같은 아미노산을 지정하는 코돈이 여러 개</b>이기 때문이다.</div></div>'
-    : '');
+  var s = '';
+  if (mutDoneCount() > 0){
+    s += '<table class="t mut-sum"><thead><tr><th>변화</th><th>결과</th></tr></thead><tbody>';
+    MUTS.forEach(function(x){
+      if (!state.mutRun[x.id]) return;
+      var kd = mutKindOf(x.id);
+      s += '<tr><td>' + mutShort(x) + '</td><td class="' + (kd === 'same' ? 'keep' : 'out') + '">' + MUT_RES_SHORT[kd] + '</td></tr>';
+    });
+    s += '</tbody></table>';
+  }
+  if (mutDoneCount() === MUTS.length){
+    s += '<div class="verdict-card good"><div class="vh">🎉 어떻게 바뀌었는가에 따라 결과가 다섯 갈래로 나뉘었다</div>' +
+         '<div class="vb">치환은 아미노산 하나를 <b>바꾸거나</b>, <b>바꾸지 않거나</b>(같은 아미노산을 지정하는 코돈이 여러 개이다), ' +
+         '종결코돈을 만들어 번역을 <b>일찍 끝낸다</b>. 염기 하나가 빠지거나 더해지면 <b>읽기틀이 밀려</b> 그 뒤가 모두 달라진다. ' +
+         '세 염기가 함께 빠지면 읽기틀이 그대로여서 아미노산 <b>하나만 빠진다</b>.</div></div>';
+  }
+  setHTML('mutSummary', s);
   var p = document.getElementById('mutProg');
-  if (p) p.textContent = '확인한 자리 ' + mutDoneCount() + ' / ' + MUTS.length;
+  if (p) p.textContent = '확인한 변화 ' + mutDoneCount() + ' / ' + MUTS.length;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2866,6 +3076,7 @@ function restoreUI(){
   renderCodeChips(); renderCodeStage(); gbRender();
   ctRender();
   renderCodonTable('codonTable4', 'c4', 'ctTap4');
+  renderCodonTable('codonTable5', 'c5', 'ctTap5');
   renderDec();
   renderMut();
   renderQuizInto(Q_CELL, 'cellQ', 'rna');
@@ -2929,7 +3140,13 @@ function init(){
   if (state.autoF['2']) af['2'] = true;
   state.autoF = af;
   if (!CODON_TABLE[state.hintCodon]) state.hintCodon = null;
-  if (!mutById(state.mutNow)) state.mutNow = null;
+  var mn = mutById(state.mutNow);
+  state.mutNow = mn ? mn.id : null;               /* 옛 저장분의 숫자 10 도 id '10' 으로 */
+  Object.keys(state.mutRun).forEach(function(k){ if (!mutById(k) || state.mutRun[k] !== true) delete state.mutRun[k]; });
+  Object.keys(state.mutGuess).forEach(function(k){
+    var g = state.mutGuess[k];
+    if (!mutById(k) || typeof g !== 'number' || g < 0 || g >= MUT_CHOICES.length || g !== Math.floor(g)) delete state.mutGuess[k];
+  });
   var cl = Number(state.codeLast);
   state.codeLast = (CODE_SIZES.indexOf(cl) >= 0) ? cl : null;
   /* ★저장분에 teacherUnlock 이 남아 있어도 켜지 않는다 — 새로고침하면 언제나 잠긴 채로 시작한다. */
