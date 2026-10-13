@@ -51,7 +51,8 @@ try {
   --prot:#C2185B;  --prot-bg:#FCE4EC; --prot-ink:#8E1147;  /* 아미노산·단백질 — 자홍 */
   --ribo:#9A4B12;  --ribo-ink:#6E340A;                     /* 라이보솜(rRNA) — 갈색 */
   --trna:#7A8A00;  --trna-ink:#4F5A00;                     /* tRNA — 올리브 */
-  --hl:#EEFF41;    --hl-ink:#5C6300;                       /* 형광 — ③ 코돈표의 개시·종결코돈 칸. ★JS 의 C_HL 과 같은 값 */
+  --hl:#EEFF41;    --hl-ink:#5C6300;                       /* 형광(노랑) — ③ 코돈표의 개시코돈 칸. ★JS 의 C_HL 과 같은 값 */
+  --hls:#7CC8FF;   --hls-ink:#0B4F80;                      /* 형광(파랑) — ③ 코돈표의 종결코돈 칸(교사 2026-10-13). ★JS 의 C_HL_STOP 과 같은 값 */
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
@@ -130,6 +131,15 @@ h3{font-size:16.5px;margin:16px 0 8px;color:var(--ink);}
   /* ★top 은 기본값일 뿐이다 — stickyCenter() 가 칸 높이에 맞춰 (화면 − 칸)/2 로 덮어써 무대가 화면 세로 가운데에 멈춘다(교사 요청 2026-09-12) */
   .pane-l{position:sticky; top:10px; max-height:calc(100vh - 20px); overflow-y:auto;}
   .pane-l svg.stage{min-width:0;}
+  .panes.nol{grid-template-columns:minmax(0,1fr);}   /* ①-2 — 그림은 카드 위에 따로(.duo-row), 칸은 하나 */
+  /* ✏️ 코돈표를 열면 — 카드를 화면 쪽으로 더 넓히고(최대 450px씩) 서열 | 코돈표 를 나란히. 서열 칸은 sticky */
+  .card.split.ctwide{
+    margin-left:calc(-1 * clamp(0px, (100vw - 1004px) / 2, 450px));
+    margin-right:calc(-1 * clamp(0px, (100vw - 1004px) / 2, 450px));
+  }
+  .drill-wrap.open{display:grid;grid-template-columns:minmax(0,1fr) minmax(660px,700px);gap:18px;align-items:start;}
+  .drill-wrap.open .drill-main{position:sticky;top:10px;}
+  .drill-wrap.open .drill-ct{margin-top:0;}
   .pane-r svg.stage{min-width:0;}
 }
 /* ★1179.98px — 정수로 끊으면 1179 초과 1180 미만의 소수 폭(브라우저 확대에서 실제로 생긴다)이
@@ -172,6 +182,13 @@ svg.stage{display:block;width:100%;min-width:520px;height:auto;touch-action:mani
 .anicap{font-size:16px;color:var(--ink);margin-top:8px;min-height:52px;line-height:1.65;
         border-left:4px solid var(--blue);background:var(--blue-bg);border-radius:6px;padding:8px 12px;}
 
+/* ── ①-2 두 그림 양옆 배치 ── */
+.duo{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;}
+.duo-c{flex:1 1 300px;min-width:0;}
+.duo-c h3{font-size:15.5px;}
+/* ★두 그림은 카드 폭 전체를 쓴다 — 왼쪽 칸(약 780px)에 둘을 넣으면 그림 속 글자가 7px 로 줄었다 */
+.duo-row{margin-top:12px;}
+
 /* ── 조작 패널 (「🔎 무엇을 보아야 하는가」) ── */
 .panel{border:1px solid var(--line);border-radius:10px;background:#FAFAFA;padding:12px 14px;margin-top:12px;}
 .panel .ptitle{font-size:16px;font-weight:700;margin-bottom:8px;}
@@ -187,20 +204,56 @@ svg.stage{display:block;width:100%;min-width:520px;height:auto;touch-action:mani
 .fbox.prot.on{border-color:var(--prot);background:var(--prot-bg);color:var(--prot-ink);}
 .farr{font-size:14.5px;font-weight:700;color:#C3C8D0;transition:color .45s ease;}
 .farr.on{color:var(--ink);}
-.flowcap{font-size:14px;color:var(--sub);margin:2px 0 0;}
+.flowcap{font-size:16px;color:var(--sub);margin:2px 0 0;}
+#zm_cap .uhot{color:#fff;background:var(--rna);border-radius:5px;padding:0 5px;}
 /* ── ① 범례 — 무대에 등장한 차례로 켜진다 ── */
 .rlg{list-style:none;margin:10px 0 0;padding:0;}
-.rlg li{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:8px;font-size:15px;color:#9AA1AC;line-height:1.5;}
+.rlg li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:17px;color:#9AA1AC;line-height:1.5;
+        border:2px solid transparent;transition:background .45s ease,border-color .45s ease;}
 .rlg li.lit{color:var(--ink);background:#F7F8FA;}
-.rlg li b{font-size:15.5px;}
+.rlg li b{font-size:17.5px;}
+/* 그 국면에 처음 등장한 RNA — 범례 칸도 같은 색으로 테두리를 두른다 */
+.rlg li.new#lg_mrna{border-color:var(--rna);background:var(--rna-bg);}
+.rlg li.new#lg_rrna{border-color:#9A4B12;background:#F6ECE3;}
+.rlg li.new#lg_trna{border-color:#7A8A00;background:#F2F4DF;}
+/* ① 캡션 — 설명 글자를 키운다(①-1 만) */
+#cs_cap{font-size:19px;line-height:1.7;min-height:64px;}
+#cs_cap .rn{font-weight:800;}
+#cs_cap .rn.m{color:#5321A8;} #cs_cap .rn.r{color:#9A4B12;} #cs_cap .rn.t{color:#5F6B00;}
+.debut{display:inline-block;font-size:15px;font-weight:800;color:#fff;border-radius:999px;padding:2px 10px;margin-right:6px;vertical-align:2px;}
+.debut.m{background:#6C2BD9;} .debut.r{background:#9A4B12;} .debut.t{background:#7A8A00;}
+/* ① 무대의 등장 고리 — 깜박이며 시선을 끈다 */
+.cs-ring{animation:csRing 1.3s ease-in-out infinite;}
+@keyframes csRing{0%,100%{stroke-opacity:.95;stroke-width:4;}50%{stroke-opacity:.35;stroke-width:7;}}
 .rlg svg{flex:0 0 auto;display:block;}
 
 /* ── ② 줌 무대 안의 빈칸 표시 (SVG 안 class) ── */
-#zmStage .blank rect{fill:#fff;stroke:var(--rna);stroke-dasharray:4,3;stroke-width:2;}
-#zmStage .blank text{fill:var(--rna);}
-#zmStage .okb rect{stroke:var(--green);stroke-width:3.5;}
-#zmStage .badb rect{fill:var(--red-bg);stroke:var(--red);stroke-width:3.5;}
-#zmStage .badb text{fill:var(--red);}
+/* ── ② 전사 — 짝지으려던 T 가 튕겨 나가고 U 가 들어온다(교사 2026-10-13) ──
+   ★결과 상태와 무관한 장식이다. 국면 1 → 2 로 넘길 때만 .run 을 붙여 한 번 돈다(되감기·건너뛰기에는 없다). */
+#zmStage .tdecoy{opacity:0;}
+#zmStage .tdecoy.run{animation:tBounce 1.3s ease-out both;}
+#zmStage .tdecoy .tx{opacity:0;}
+#zmStage .tdecoy.run .tx{animation:tCross 1.3s ease-out both;}
+@keyframes tBounce{
+  0%{opacity:0;transform:translate(0px,46px);}
+  28%{opacity:1;transform:translate(0px,4px);}
+  36%{transform:translate(0px,0px);}
+  44%{transform:translate(-4px,0px);}
+  52%{transform:translate(4px,0px);}
+  60%{opacity:1;transform:translate(0px,2px);}
+  100%{opacity:0;transform:translate(34px,58px) rotate(55deg);}
+}
+@keyframes tCross{0%,34%{opacity:0;}42%,85%{opacity:1;}100%{opacity:0;}}
+.tubox{border:2px solid var(--rna);border-radius:12px;background:var(--rna-bg);padding:12px 14px;margin-top:12px;}
+.tubox .tuh{font-size:17px;font-weight:800;color:var(--rna-ink);margin-bottom:8px;}
+.tubox p{margin:8px 0 0;font-size:16px;}
+.turow{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.tul{min-width:76px;font-size:15px;font-weight:800;}
+.tul.dna{color:var(--dna-ink);} .tul.rna{color:var(--rna-ink);}
+.tb{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:7px;
+    font-family:'Consolas','Menlo',monospace;font-size:19px;font-weight:800;color:#fff;}
+.tb.d{background:var(--dna);} .tb.r{background:var(--rna);}
+.tb.hot{outline:3px solid var(--prot);outline-offset:2px;}
 .slots{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
 .slot{border:1.5px solid var(--line);border-radius:9px;padding:7px 11px;font-size:15.5px;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .slot.cur{border-color:var(--yellow);background:var(--yellow-bg);font-weight:700;}
@@ -212,7 +265,7 @@ svg.stage{display:block;width:100%;min-width:520px;height:auto;touch-action:mani
 #ctStage .ctrow{cursor:pointer;}
 .ctinfo{border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;background:#fff;min-height:64px;}
 .ctinfo.start{border-color:var(--hl-ink);background:#FBFFD6;}
-.ctinfo.stop{border-color:#333;background:#F3F3F3;}
+.ctinfo.stop{border-color:var(--hls-ink);background:#E3F3FF;}
 .ctinfo.aa{border-color:var(--rna);background:var(--rna-bg);}
 .ctinfo .ih{font-weight:800;font-size:16.5px;margin-bottom:4px;}
 .ctinfo .ib{font-size:15.5px;line-height:1.75;}
@@ -248,13 +301,22 @@ table.t.codetbl td.q{background:var(--yellow-bg);font-weight:700;}
 table.t.mut-sum{margin-top:12px;width:100%;min-width:0;}
 .mt-band,.mt-aa,.mt-del{pointer-events:none;}   /* ⑤ 그림 — 누를 것이 없다(검사가 class 로 센다) */
 .tile.changed{background:var(--prot-bg);border-color:var(--prot);color:var(--prot-ink);}
-.tile.dna{color:var(--dna-ink);}   /* ✏️ 주형 가닥 — DNA 는 청록 */
 .dlabel{font-weight:700;font-size:15px;color:var(--sub);margin-top:12px;}
-.strand.pair{align-items:stretch;}
-.pcol{display:inline-flex;flex-direction:column;gap:3px;}
-.pend{display:inline-flex;flex-direction:column;justify-content:space-around;font-size:14px;font-weight:700;color:var(--sub);padding:0 4px;}
-.tile.now{border:2px solid var(--yellow);background:var(--yellow-bg);}
-.tile.blank{background:#F2F4F7;border-style:dashed;}
+
+/* ── ✏️ 직접 해독해 보기 — 서열을 크게 · 코돈표는 접어 둔다 ── */
+#cardDrill .tile{width:40px;min-height:56px;font-size:25px;border-radius:7px;}
+#cardDrill .tile .tno{font-size:12px;}
+#cardDrill .strand{gap:3px;}
+#cardDrill .strand .end{font-size:16px;}
+#cardDrill .cod{padding:4px;gap:2px;}
+.dhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;}
+.dhead .dlabel{margin-top:0;font-size:16px;}
+.ctbtn{font:inherit;font-size:16px;font-weight:800;min-height:44px;padding:8px 16px;border-radius:10px;cursor:pointer;
+       border:2px solid var(--prot);background:#fff;color:var(--prot-ink);}
+.ctbtn.on{background:var(--prot);color:#fff;}
+.drill-ct{display:none;margin-top:14px;}
+.drill-wrap.open .drill-ct{display:block;}
+#cardDrill .drill-wrap.open .tile{width:36px;min-height:52px;font-size:22px;}
 
 /* 폴리펩타이드 구슬 — 색은 하나(자홍)로 둔다. 아미노산마다 색을 주면 「색=종류」가 하나 더 생긴다. */
 .pep{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;min-height:40px;}
@@ -390,6 +452,8 @@ footer{text-align:center;margin-top:22px;}
 .rmove{transition:transform .85s cubic-bezier(.4,0,.2,1), opacity .45s ease;}
 @media (prefers-reduced-motion: reduce){
   .rfade,.rmove,.fbox,.farr{transition:none !important;}
+  .cs-ring{animation:none !important;}
+  #zmStage .tdecoy.run,#zmStage .tdecoy.run .tx{animation:none !important;}
 }
 
 /* ── 미완성 잠금 화면 ── */
@@ -462,15 +526,6 @@ html:not(.unlocked) #draftGate{display:flex;}
       <div class="pane-r">
         <div class="pr-do">
           <div class="taskbar">▶ 다음 을 눌러 여섯 국면을 차례로 보시오.</div>
-          <div class="panel">
-            <div class="ptitle">🔎 무엇을 보아야 하는가</div>
-            <p>DNA 복제에서는 DNA 가 DNA 를 만들었다. 이번에는 DNA 가 <b>단백질</b>을 만든다. 그런데 DNA 는 핵 밖으로 나가지 않는다.</p>
-            <ul>
-              <li>핵 속 DNA 는 <b>제자리에 남는가</b>, 무엇이 대신 나가는가</li>
-              <li>나간 것은 <b>어디에</b> 닿고, 거기서 무엇이 오는가</li>
-              <li>RNA 세 종류(mRNA · rRNA · tRNA)가 <b>각각 어느 자리</b>에서 일하는가</li>
-            </ul>
-          </div>
           <div class="flow" id="cs_flow">
             <span class="fbox dna" id="cf_dna">DNA</span><span class="farr" id="cf_tr">전사 ▶</span>
             <span class="fbox rna" id="cf_rna">RNA</span><span class="farr" id="cf_tl">번역 ▶</span>
@@ -495,14 +550,21 @@ html:not(.unlocked) #draftGate{display:flex;}
       <h2 class="amber" style="flex:1 1 300px;margin-bottom:0;">①-2 글자 몇 개로 무엇을 적는가 — 유전부호<span class="yr">교과서 60·61쪽</span></h2>
       <span class="tag" id="codeProg">눌러 본 묶음 0 / 3</span>
     </div>
-    <div class="panes">
-      <div class="pane-l">
+    <div class="duo-row">
+        <!-- ★묶는 그림과 막대그래프를 양옆으로 놓는다(교사 2026-10-13: 「아래위로 있으니 보기 불편」) — 좁으면 쌓인다 -->
+        <div class="duo">
+          <div class="duo-c">
         <div class="stage-wrap"><svg class="stage" id="groupStage" viewBox="0 0 700 292" xmlns="http://www.w3.org/2000/svg" role="img"
              aria-label="DNA 염기 12개를 고른 크기로 묶고, 묶음 하나마다 아미노산 하나를 대응시키며, 묶음 하나가 될 수 있는 모든 종류를 늘어놓은 무대"></svg></div>
         <div class="anicap" id="gb_cap"></div>
-        <h3 style="margin-bottom:6px;">묶음 하나가 될 수 있는 가짓수 — 아미노산 20종류와 견주기</h3>
-        <div class="stage-wrap" style="max-width:560px;"><div id="codeStage"></div></div>
-      </div>
+          </div>
+          <div class="duo-c">
+            <h3 style="margin:0 0 6px;">묶음 하나가 될 수 있는 가짓수 — 아미노산 20종류와 견주기</h3>
+            <div class="stage-wrap"><div id="codeStage"></div></div>
+          </div>
+        </div>
+    </div>
+    <div class="panes nol">
       <div class="pane-r">
         <div class="pr-do">
           <div class="datbox" style="margin-top:0;">
@@ -546,7 +608,7 @@ html:not(.unlocked) #draftGate{display:flex;}
   <div class="card split" id="cardZoom">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
       <h2 class="dna" style="flex:1 1 300px;margin-bottom:0;">② 염기서열에 집중하기<span class="yr">교과서 61쪽 그림 Ⅱ-2</span></h2>
-      <span class="tag" id="zoomProg">채운 빈칸 0 / 4</span>
+      <span class="tag" id="zoomProg">본 국면 0 / 6</span>
     </div>
     <div class="panes">
       <div class="pane-l">
@@ -563,7 +625,7 @@ html:not(.unlocked) #draftGate{display:flex;}
       </div>
       <div class="pane-r">
         <div class="pr-do">
-          <div class="taskbar" id="zmTask">연출을 끝까지 본 뒤, mRNA 의 빈칸 4개를 칩으로 채우시오.</div>
+          <div class="taskbar" id="zmTask">▶ 다음 을 눌러 여섯 국면을 차례로 보시오. ② 전사 국면에서 주형의 A 자리를 눈여겨보시오.</div>
           <div class="panel">
             <div class="ptitle">🔎 무엇을 보아야 하는가</div>
             <ul style="margin-top:0;">
@@ -572,8 +634,13 @@ html:not(.unlocked) #draftGate{display:flex;}
               <li>mRNA 를 <b>어디서부터 몇 글자씩</b> 끊어 읽는가</li>
             </ul>
           </div>
-          <div class="chips" id="zmChips"></div>
-          <div class="slots" id="zmSlots"></div>
+          <!-- ★「mRNA 에는 T 대신 U」를 따로 못 박는다(교사 2026-10-13) — 무대의 ② 전사 국면에서 T 가 튕겨 나가는 연출과 짝 -->
+          <div class="tubox" id="zmTU">
+            <div class="tuh">📌 mRNA 에는 T 대신 U 가 들어간다</div>
+            <div class="turow"><span class="tul dna">DNA 염기</span><span class="tb d">A</span><span class="tb d hot">T</span><span class="tb d">G</span><span class="tb d">C</span></div>
+            <div class="turow"><span class="tul rna">RNA 염기</span><span class="tb r">A</span><span class="tb r hot">U</span><span class="tb r">G</span><span class="tb r">C</span></div>
+            <p>전사에서 주형 가닥의 <b>A</b> 에 짝지어지는 염기는 <b>U</b> 이다. RNA 에는 <b>T 가 없다.</b></p>
+          </div>
           <div class="msg hide" id="fb_zoom"></div>
         </div>
         <div class="pr-q">
@@ -582,7 +649,7 @@ html:not(.unlocked) #draftGate{display:flex;}
         </div>
       </div>
     </div>
-    <div class="secreset"><button type="button" onclick="resetSec('zoom')">↻ ② 빈칸 지우고 다시 하기</button></div>
+    <div class="secreset"><button type="button" onclick="resetSec('zoom')">↻ ② 처음 국면부터 다시 보기</button></div>
   </div>
 
   <!-- ══ ③ 코돈표 — 세 축 · 개시 / 아미노산 지정 / 종결 ══ -->
@@ -707,22 +774,22 @@ html:not(.unlocked) #draftGate{display:flex;}
   <div class="card split" id="cardDrill">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
       <h2 class="prot" style="flex:1 1 300px;margin-bottom:0;">✏️ 직접 해독해 보기</h2>
-      <span class="tag" id="drillProg">해독한 서열 0 / 4</span>
+      <span class="tag" id="drillProg">해독한 서열 0 / 3</span>
     </div>
     <p class="sub">처음 보는 서열을 스스로 끊어 읽는 연습이다. <b>풀지 않아도 활동은 완료된다.</b></p>
-    <div class="panes">
-      <div class="pane-l">
-        <div class="ctab-outer" id="codonTableP"></div>
+    <!-- ★서열 하나를 크게 보이고, 코돈표는 접어 둔다 — 「📖 코돈표 보기」로 연다(교사 2026-10-13).
+         열려도 서열을 가리지 않는다: 넓은 화면은 서열 옆에 나란히(카드를 화면 쪽으로 더 넓힌다), 좁은 화면은 서열 아래에. -->
+    <div class="chips" id="drillTabs"></div>
+    <div class="drill-wrap" id="drillWrap">
+      <div class="drill-main">
+        <div id="drillBody"></div>
+        <h3 style="margin-top:12px;">폴리펩타이드</h3>
+        <div class="pep" id="drillPep"></div>
+        <div class="msg hide" id="fb_drill"></div>
+        <div id="drillDone"></div>
       </div>
-      <div class="pane-r">
-        <div class="pr-do">
-          <div class="chips" id="drillTabs"></div>
-          <div id="drillBody"></div>
-          <h3 style="margin-top:12px;">폴리펩타이드</h3>
-          <div class="pep" id="drillPep"></div>
-          <div class="msg hide" id="fb_drill"></div>
-          <div id="drillDone"></div>
-        </div>
+      <div class="drill-ct" id="drillCt">
+        <div class="ctab-outer" id="codonTableP"></div>
       </div>
     </div>
     <div class="secreset"><button type="button" onclick="resetSec('drill')">↻ ✏️ 해독을 지우고 다시 풀기</button></div>
@@ -786,7 +853,8 @@ var C_PROT = '#C2185B';   /* 자홍 — 아미노산·단백질 */
 var C_RIBO = '#9A4B12';   /* 갈색 — 라이보솜(rRNA). 앰버(#E67E22)와 다른 색이다 */
 var C_TRNA = '#7A8A00';   /* 올리브 — tRNA. 초록(#2A7A38)과 색상환에서 60° 떨어져 있고 무대에 초록이 없다 */
 var C_GEAR = '#6B7280';   /* 회색 — 세포·핵 같은 구조(기구 계열) */
-var C_HL   = '#EEFF41';   /* 형광 — ③ 코돈표의 개시·종결코돈 칸 */
+var C_HL   = '#EEFF41';   /* 형광(노랑) — ③ 코돈표의 개시코돈 칸 */
+var C_HL_STOP = '#7CC8FF';   /* 형광(파랑) — ③ 코돈표의 종결코돈 칸. 개시와 색을 가른다(교사 2026-10-13) */
 
 var BASES4 = ['U','C','A','G'];          /* 코돈표의 축 순서 (교과서 62쪽과 같다) */
 
@@ -853,11 +921,13 @@ var DEMO_MRNA     = 'UGGAUGUUGGCAGUA';   /* mRNA 5′→3′ */
 var DEMO_START    = 3;                   /* 0부터 센 개시코돈의 자리 */
 var DEMO_CODING   = DEMO_MRNA.replace(/U/g, 'T');   /* 주형의 상대 가닥 5′→3′ (그림의 아래 가닥) */
 
-/* ★② 의 빈칸 — 주형의 네 염기 C·T·A·G 가 **한 번씩** 들어가는 자리를 골랐다(0부터 센 자리).
-   A 자리만 네 개 뚫으면 U 만 네 번 눌러 끝나 상보 규칙을 적용하는 일이 사라진다.
-   3·4 는 개시코돈 AUG 안이다. 정답은 DEMO_MRNA 에서 읽는다 — 여기 따로 적지 않는다. */
-var BLANK_IDX = [1, 3, 4, 10];
-function blankIdx(){ return BLANK_IDX.slice(); }
+/* ★② 의 빈칸 채우기는 걷어 냈다(교사 2026-10-13: 「필요 없는 듯」). 대신 전사 국면에서 주형 A 자리마다
+   T 가 짝지으려다 튕겨 나가고 U 가 들어오는 연출을 둔다 — 그 자리는 DEMO_TEMPLATE 의 A 에서 읽는다. */
+function tuIdx(){
+  var out = [];
+  for (var i = 0; i < DEMO_TEMPLATE.length; i++) if (DEMO_TEMPLATE.charAt(i) === 'A') out.push(i);
+  return out;
+}
 
 /* ── 순수 로직 — 검사가 직접 부른다 ──────────────────────────── */
 
@@ -1107,14 +1177,14 @@ var PRACTICE = [
   { id:'p1', lv:'중',
     q:'제시된 mRNA에서 첫 번째 염기 C가 없어져 두 번째 염기부터 읽게 되었다. 이때 일어나는 일로 옳은 것은?',
     ch:['첫 번째 아미노산만 바뀌고 나머지 아미노산서열은 그대로 유지된다.',
-        '아미노산서열 전체가 바뀌고 네 번째 코돈에서 번역이 끝난다.',
         '아미노산이 하나 줄어들 뿐 나머지 서열은 그대로이다.',
-        '번역이 아예 시작되지 않는다.'],
-    a:1,
+        '번역이 아예 시작되지 않는다.',
+        '아미노산서열 전체가 바뀌고 네 번째 코돈에서 번역이 끝난다.'],
+    a:3,   /* ★💪 정답 자리를 고르게 — p1 ④ · p2 ① · p3 ② · p4 ③ (교사 2026-10-13) */
     no:['옳지 않다. 염기 하나가 빠지면 그 뒤의 코돈이 모두 한 칸씩 밀려 다시 묶인다.',
-        '',
         '옳지 않다. 코돈이 통째로 밀리므로 뒤쪽 아미노산도 함께 바뀐다.',
-        '옳지 않다. 번역은 시작되며, 다만 네 번째 코돈에서 끝난다.'],
+        '옳지 않다. 번역은 시작되며, 다만 네 번째 코돈에서 끝난다.',
+        ''],
     ex:'염기 하나가 없어지면 그 뒤가 모두 한 칸씩 밀려 AUG–GUA–ACG–UGA로 묶인다. ' +
        '네 번째 코돈 UGA가 종결코돈이므로 아미노산 3개만 만들어지고 번역이 끝난다.' },
 
@@ -1259,7 +1329,6 @@ function freshState(){
   return {
     cellSeen:false,    /* ① 마지막 국면까지 봤는가 */
     zoomSeen:false,    /* ② 마지막 국면까지 봤는가 */
-    zoomFill:{},       /* ② 빈칸에 넣은 염기 {'1':'G',…} — 오답도 남긴다(화면에 빨갛게 보인다) */
     codeRun:{},        /* ①-2 눌러 본 묶음 크기 {'1':true,…} */
     codeLast:null,     /* ①-2 마지막으로 고른 묶음 크기 */
     ctOpen:{},         /* ③ 연 칸 {'UU':true,…} — 첫·둘째 염기 두 글자가 열쇠 */
@@ -1274,8 +1343,7 @@ function freshState(){
     mutNow:null,       /* ⑤ 지금 고른 변화의 id (그림 아래 행) */
     drillN:{},         /* ✏️ 서열마다 맞게 탭한 코돈 수 {k1:n,…} — 틀린 탭은 남기지 않는다 */
     drillHint:{},      /* ✏️ 서열마다 연 힌트 단계 {k1:1|2} */
-    drillTx:{},        /* ✏️ 연습 2 — 채운 mRNA 염기 수 {k2:n} (틀린 염기는 남기지 않는다) */
-    drillNow:null,     /* ✏️ 지금 고른 서열 id (🎲 'rand' 는 새로고침하면 연습 1 로) */
+    drillNow:null,     /* ✏️ 지금 고른 서열 id */
     qPick:{},          /* ①②③④⑤ 결론 문항 */
     pPick:{},          /* 💪 더 풀어 보기 */
     ta:{},             /* ⑥ 서술형 */
@@ -1365,7 +1433,7 @@ function mutDoneCount(){
 }
 function stepDone(k){
   if (k === 'cell') return !!state.cellSeen && answeredOf(Q_CELL, state.qPick) === Q_CELL.length;
-  if (k === 'zoom') return zoomDone(state.zoomFill) && answeredOf(Q_ZOOM, state.qPick) === Q_ZOOM.length;
+  if (k === 'zoom') return !!state.zoomSeen && answeredOf(Q_ZOOM, state.qPick) === Q_ZOOM.length;
   if (k === 'code') return codeDoneCount() === CODE_SIZES.length && answeredOf(Q_CODE, state.qPick) === Q_CODE.length;
   if (k === 'find') return ctOpenCount() === 16 && ctSeenCount() === CT_KINDS.length && answeredOf(Q_FIND, state.qPick) === Q_FIND.length;
   if (k === 'dec')  return decDoneCount() === 3 && answeredOf(Q_DEC, state.qPick) === Q_DEC.length;
@@ -1472,6 +1540,12 @@ var CS = {
 };
 var CS_FILL_CELL = '#FFFDF7', CS_FILL_NUC = '#F1F3F7';
 /* ph2 의 mRNA 자리 — 전사된 자리에서 핵공으로 가는 직선을 그대로 연장한다. 그래서 사본이 **정확히 핵공을 지난다.** */
+/* 등장 고리 자리 — mRNA 는 전사된 자리, rRNA 는 라이보솜, tRNA 는 착지한 세 개를 함께 두른다 */
+var CS_RING = {
+  mrna:{ x:CS.mrnaHome.x, y:CS.mrnaHome.y, rx:72, ry:20 },
+  rrna:{ x:CS.ribo.x, y:CS.ribo.y - 6, rx:48, ry:40 },
+  trna:{ x:CS.trnaDock[1].x, y:CS.trnaDock[1].y - 8, rx:58, ry:28 }
+};
 function csMrnaOut(){
   var h = CS.mrnaHome, p = CS.pore, x = CS.mrnaOutX;
   return { x:x, y: h.y + (p.y - h.y) * (x - h.x) / (p.x - h.x) };
@@ -1486,10 +1560,10 @@ var CS_STEPS = [
 ];
 var CS_CAP = [
   '유전정보는 <b>핵 속 DNA</b> 에 염기서열로 적혀 있다. 단백질을 만드는 <b>라이보솜</b>은 세포질에 있다. 둘은 떨어져 있다.',
-  '<b>전사</b> — DNA 의 유전자 부분을 베껴 <b>mRNA</b> 를 만든다. 원본 DNA 는 그대로 있다.',
-  'mRNA 가 <b>핵공</b>을 지나 세포질로 나간다. <b>DNA 는 핵 밖으로 나가지 않는다.</b> 나가는 것은 사본이다.',
-  '<b>번역</b> — mRNA 가 라이보솜에 붙는다. 라이보솜은 <b>rRNA</b> 와 단백질로 이루어져 있다.',
-  '<b>tRNA</b> 가 아미노산을 하나씩 라이보솜으로 나른다. mRNA 의 정보대로 아미노산이 차례로 이어진다.',
+  '<span class="debut m">🆕 mRNA 등장</span><b>전사</b> — DNA 의 유전자 부분을 베껴 <b class="rn m">mRNA(전령 RNA)</b> 를 만든다. 원본 DNA 는 그대로 있다.',
+  '<b class="rn m">mRNA</b> 가 <b>핵공</b>을 지나 세포질로 나간다. <b>DNA 는 핵 밖으로 나가지 않는다.</b> 나가는 것은 사본이다.',
+  '<span class="debut r">🆕 rRNA 등장</span><b>번역</b> — <b class="rn m">mRNA</b> 가 라이보솜에 붙는다. 라이보솜은 <b class="rn r">rRNA(라이보솜 RNA)</b> 와 단백질로 이루어져 있다.',
+  '<span class="debut t">🆕 tRNA 등장</span><b class="rn t">tRNA(운반 RNA)</b> 가 아미노산을 하나씩 라이보솜으로 나른다. <b class="rn m">mRNA</b> 의 정보대로 아미노산이 차례로 이어진다.',
   '이어진 아미노산 사슬이 <b>폴리펩타이드</b>이고, 접혀서 <b>단백질</b>이 된다. DNA → RNA → 단백질, 이 흐름이 <b>중심원리</b>이다.'
 ];
 function cellLayout(ph){
@@ -1532,7 +1606,8 @@ function cellLayout(ph){
     pep:{ x:CS.pep.x, y:CS.pep.y, op:(p === 5 ? 1 : 0) },
     labels:labels,
     flow:{ dna:1, tr:(p >= 1 ? 1 : 0), rna:(p >= 1 ? 1 : 0), tl:(p >= 3 ? 1 : 0), prot:(p >= 5 ? 1 : 0) },
-    legend:{ mrna:(p >= 1 ? 1 : 0), rrna:(p >= 3 ? 1 : 0), trna:(p >= 4 ? 1 : 0) }
+    legend:{ mrna:(p >= 1 ? 1 : 0), rrna:(p >= 3 ? 1 : 0), trna:(p >= 4 ? 1 : 0) },
+    debut:(p === 1 ? 'mrna' : (p === 3 ? 'rrna' : (p === 4 ? 'trna' : null)))   /* 그 국면에 처음 나오는 RNA — 고리·칩·범례가 같이 켜진다 */
   };
 }
 /* 지연은 「국면을 하나 넘길 때」만 — tRNA 세 개가 차례로 온다. 되감기·다시 그리기에는 없다. */
@@ -1598,7 +1673,7 @@ function csStageSvg(){
   /* mRNA — 보라 파선 */
   s += '<g id="cs_mrna" class="rmove" opacity="0"><path d="' + wavePath(-55, 55, 5, 24, 0) +
        '" fill="none" stroke="' + C_RNA + '" stroke-width="4.5" stroke-linecap="round"/></g>';
-  s += '<g id="cs_lb_mrna" class="rmove" opacity="0">' + txt('', 0, 0, 'mRNA', 13, '#5321A8', 'start') + '</g>';
+  s += '<g id="cs_lb_mrna" class="rmove" opacity="0">' + txt('', 0, 0, 'mRNA', 16, '#5321A8', 'start', 800) + '</g>';
   /* tRNA 3개 + 아미노산 3개 */
   for (k = 0; k < 3; k++){
     s += '<g id="cs_trna_' + k + '" class="rmove" opacity="0">' +
@@ -1610,12 +1685,19 @@ function csStageSvg(){
     s += '<g id="cs_aa_' + k + '" class="rmove" opacity="0">' +
          '<circle r="9" fill="' + C_PROT + '"/><circle cx="0" cy="-3" r="2" fill="#fff"/></g>';
   }
+  /* RNA 등장 고리 — 처음 나오는 국면에만 켜진다(CS_RING) */
+  [['mrna', C_RNA], ['rrna', C_RIBO], ['trna', C_TRNA]].forEach(function(r){
+    var g = CS_RING[r[0]];
+    s += '<g id="cs_hl_' + r[0] + '" class="rfade" opacity="0"><ellipse class="cs-ring" cx="' + g.x + '" cy="' + g.y + '" rx="' + g.rx + '" ry="' + g.ry +
+         '" fill="none" stroke="' + r[1] + '" stroke-width="4"/></g>';
+  });
   /* 국면에 따라 켜지는 이름표 */
   s += txt('cs_lb_pore', CS.pore.x + 12, 146, '핵공', 13, C_GEAR, 'start', 700, 0, 'rfade');
   s += txt('cs_lb_tr', 130, 210, '전사', 14, '#5321A8', 'end', 800, 0, 'rfade');
   s += txt('cs_lb_ribo', CS.ribo.x, 271, '라이보솜 — 번역', 14, '#6E340A', 'middle', 800, 0, 'rfade');
-  s += txt('cs_lb_trna', 452, 191, 'tRNA', 13, '#4F5A00', 'end', 700, 0, 'rfade');
-  s += txt('cs_lb_aa', 452, 172, '아미노산', 13, '#8E1147', 'end', 700, 0, 'rfade');
+  s += txt('cs_lb_rrna', CS.ribo.x, 290, 'rRNA + 단백질', 14, '#9A4B12', 'middle', 800, 0, 'rfade');
+  s += txt('cs_lb_trna', 438, 193, 'tRNA', 16, '#4F5A00', 'end', 800, 0, 'rfade');
+  s += txt('cs_lb_aa', 438, 170, '아미노산', 13, '#8E1147', 'end', 700, 0, 'rfade');
   s += txt('cs_lb_prot', CS.pep.x, 127, '단백질(폴리펩타이드)', 13, '#8E1147', 'middle', 800, 0, 'rfade');
   return s;
 }
@@ -1637,6 +1719,8 @@ function csApply(ph, prev){
   fadeTo('cs_lb_pore', L.labels.pore); fadeTo('cs_lb_tr', L.labels.tr);
   fadeTo('cs_lb_ribo', L.labels.ribo); fadeTo('cs_lb_trna', L.labels.trna);
   fadeTo('cs_lb_aa', L.labels.aa);     fadeTo('cs_lb_prot', L.labels.prot);
+  fadeTo('cs_lb_rrna', L.labels.ribo);
+  ['mrna','rrna','trna'].forEach(function(k){ fadeTo('cs_hl_' + k, L.debut === k ? 1 : 0); });
   /* 흐름도 · 범례 — 무대와 같은 표(L.flow · L.legend)에서 켜진다 */
   var on = function(id, v, base){
     var el = document.getElementById(id);
@@ -1647,7 +1731,7 @@ function csApply(ph, prev){
   on('cf_prot', L.flow.prot, 'fbox prot');
   RNA_SLOTS.forEach(function(r){
     var li = document.getElementById('lg_' + r.id);
-    if (li) li.className = L.legend[r.id] ? 'lit' : '';
+    if (li) li.className = (L.legend[r.id] ? 'lit' : '') + (L.debut === r.id ? ' new' : '');
   });
   var fc = document.getElementById('cs_flowcap');
   if (fc) fc.textContent = L.flow.prot ? 'DNA → RNA → 단백질 — 이 흐름이 중심원리이다.' :
@@ -1689,7 +1773,7 @@ function renderLegend(){
    ★세계 안 <text> 는 염기 글자뿐이고 세포 축척에서는 op 0 이다(1/6 로 줄어든 글자는 읽을 수 없다).
    ══════════════════════════════════════════════════════════════ */
 var ZM = { pitch:30, x0:155, yC:96, yT:132, yM:212, yK:238, yBan:290, yA:330, half:12, S:1/6, chainX0:227, chainDx:82,
-           tileStagger:0.12, aaStagger:0.3 };
+           tileStagger:0.12, aaStagger:0.3, bounce:1.0 };   /* bounce = T 가 와서 튕겨 나가는 데 쓰는 시간(초) — 그 뒤에 U 가 앉는다 */
 function zmX(i){ return ZM.x0 + ZM.pitch * i; }
 function zmCodX(k){ return zmX(DEMO_START + 3 * k + 1); }             /* 코돈 k 의 가운데 염기 자리 */
 function zmGeneCenter(){ return { x:(zmX(0) + zmX(DEMO_MRNA.length - 1)) / 2, y:(ZM.yC + ZM.yT) / 2 }; }
@@ -1712,41 +1796,23 @@ var ZM_STEPS = [
   '② 전사 — 주형에 상보적인 염기가 짝지어 mRNA 가 된다',
   '③ 세 글자씩 끊는다 — 이 묶음이 코돈이다',
   '④ 번역 — 코돈마다 아미노산이 하나씩 온다',
-  '⑤ 폴리펩타이드 — 빈칸을 채우시오'
+  '⑤ 아미노산이 이어져 폴리펩타이드가 된다'
 ];
 var ZM_CAP = [
   '①에서 본 세포다. 핵 속 DNA 의 <b>유전자 한 부분</b>을 확대해 들어간다.',
   'DNA 두 가닥 중 <b>주형 가닥</b>(3′→5′) 하나만 읽는다. 다른 가닥은 베끼지 않는다.',
-  '<b>전사</b> — 주형의 염기에 짝이 되는 염기가 5′→3′ 로 하나씩 붙어 mRNA 가 된다. <b>A 에는 T 가 아니라 U</b> 가 온다.',
+  '<b>전사</b> — 주형의 염기에 짝이 되는 염기가 5′→3′ 로 하나씩 붙어 mRNA 가 된다. 주형의 A 에 <b>T 는 짝지어지지 못하고 튕겨 나간다.</b> RNA 에는 T 가 없어 <b class="uhot">A 에는 U</b> 가 온다.',
   'mRNA 에서 <b>개시코돈 AUG</b> 를 찾아, 거기서부터 세 글자씩 끊어 읽는다. <b>mRNA 의 세 염기 묶음 하나를 코돈이라고 한다.</b>',
   '<b>번역</b> — 코돈 하나에 아미노산 하나가 온다. 코돈 4개 → 아미노산 4개.',
-  '아미노산이 이어져 <b>폴리펩타이드</b>가 된다. 이제 오른쪽 칩으로 <b>mRNA 의 빈칸 4개</b>를 채우시오.'
+  '아미노산이 이어져 <b>폴리펩타이드</b>가 된다. 주형 가닥의 염기서열 → mRNA 의 코돈 → 아미노산 서열로 유전정보가 전달된다.'
 ];
-function zoomNext(fill){
-  fill = fill || {};
-  for (var i = 0; i < BLANK_IDX.length; i++){
-    var b = BLANK_IDX[i];
-    if (fill[String(b)] !== DEMO_MRNA.charAt(b)) return b;
-  }
-  return -1;
-}
-function zoomDone(fill){ return zoomNext(fill) < 0; }
-function zoomLayout(ph, fill){
+function zoomLayout(ph){
   var p = Math.max(0, Math.min(ZM_STEPS.length - 1, Number(ph) || 0));
-  fill = fill || {};
-  var i, k, mrna = [], pair = [], codon = [], aa = [], bond = [];
+  var i, k, mrna = [], pair = [], codon = [], aa = [], bond = [], tu = tuIdx();
   for (i = 0; i < DEMO_MRNA.length; i++){
     var on = p >= 2;
     var op = on ? ((p >= 3 && i < DEMO_START) ? 0.45 : 1) : 0;    /* 개시코돈 앞 염기는 읽지 않는다 — 흐리게 */
-    var txt = DEMO_MRNA.charAt(i), st = '';
-    if (p >= 5 && BLANK_IDX.indexOf(i) >= 0){
-      var v = fill[String(i)];
-      if (v === undefined || v === null || v === ''){ txt = '?'; st = 'blank'; }
-      else if (v === DEMO_MRNA.charAt(i)){ txt = v; st = 'ok'; }
-      else { txt = String(v); st = 'bad'; }
-    }
-    if (st) op = 1;                                                /* 빈칸·정오 표시 칸은 흐리지 않는다 */
-    mrna.push({ x:zmX(i), y:ZM.yM, op:op, txt:txt, st:st });
+    mrna.push({ x:zmX(i), y:ZM.yM, op:op, txt:DEMO_MRNA.charAt(i), u:(tu.indexOf(i) >= 0) });
     pair.push({ x:zmX(i), op:(on ? 1 : 0) });
   }
   for (k = 0; k < DEMO_AA.length; k++){
@@ -1758,19 +1824,27 @@ function zoomLayout(ph, fill){
     ph:p, step:ZM_STEPS[p], cap:ZM_CAP[p], world:zoomWorld(p),
     dnaText:(p >= 1 ? 1 : 0), tmplMark:(p >= 1 ? 1 : 0),
     mrna:mrna, pair:pair, codon:codon, start:(p >= 3 ? 1 : 0), banner:(p >= 3 ? 1 : 0), aa:aa, bond:bond,
+    tuNote:(p === 2 ? 1 : 0),                                     /* 「RNA 에는 T 가 없다」 띠 + U 고리 — 전사 국면에만 */
     labels:{ nuc:(p === 0 ? 1 : 0), cell:(p === 0 ? 1 : 0), ring:(p === 0 ? 1 : 0),
-             tmpl:(p >= 1 ? 1 : 0), mrnaRow:(p >= 2 ? 1 : 0), aa:(p === 4 ? 1 : 0), pep:(p >= 5 ? 1 : 0) },
-    done:zoomDone(fill)
+             tmpl:(p >= 1 ? 1 : 0), mrnaRow:(p >= 2 ? 1 : 0), aa:(p === 4 ? 1 : 0), pep:(p >= 5 ? 1 : 0) }
   };
 }
 function zoomStagger(ph, prev){
-  var out = { tile:[], aa:[] }, i, k;
-  for (i = 0; i < DEMO_MRNA.length; i++) out.tile.push(0);
+  var out = { tile:[], aa:[], decoy:[] }, i, k, t = 0, tu = tuIdx();
+  for (i = 0; i < DEMO_MRNA.length; i++){ out.tile.push(0); out.decoy.push(-1); }
   for (k = 0; k < DEMO_AA.length; k++) out.aa.push(0);
   if (typeof prev !== 'number' || prev !== ph - 1) return out;
-  if (ph === 2) for (i = 0; i < out.tile.length; i++) out.tile[i] = Math.round(ZM.tileStagger * i * 100) / 100;   /* 5′→3′ 로 하나씩 */
+  if (ph === 2){
+    /* 5′→3′ 로 하나씩. 주형 A 자리는 T 가 먼저 와서 튕겨 나간 뒤(ZM.bounce 초) U 가 앉고, 뒤 칸은 그만큼 밀린다 */
+    for (i = 0; i < out.tile.length; i++){
+      if (tu.indexOf(i) >= 0){ out.decoy[i] = r2(t); t += ZM.bounce; }
+      out.tile[i] = r2(t);
+      t += ZM.tileStagger;
+    }
+  }
   if (ph === 4) for (k = 0; k < out.aa.length; k++) out.aa[k] = Math.round(ZM.aaStagger * k * 100) / 100;
   return out;
+  function r2(v){ return Math.round(v * 100) / 100; }
 }
 function zwSet(w){
   var el = document.getElementById('zw');
@@ -1827,6 +1901,20 @@ function zmStageSvg(){
          '<rect x="-12" y="-12" width="24" height="24" rx="5" fill="' + C_RNA + '" stroke="' + C_RNA + '" stroke-width="1.5"/>' +
          txt('zm_tx_' + i, 0, 6, DEMO_MRNA.charAt(i), 16, '#fff', 'middle', 800) + '</g>';
   }
+  /* ★주형 A 자리 — U 고리(전사 국면에만) + 튕겨 나가는 T(.tdecoy). T 는 DNA 색 칸에 흰 글자, 튕길 때 빨간 ✕ */
+  tuIdx().forEach(function(i){
+    x = zmX(i);
+    s += '<g id="zm_ur_' + i + '" class="rfade" opacity="0"><rect class="cs-ring" x="' + (x - 17) + '" y="' + (ZM.yM - 17) +
+         '" width="34" height="34" rx="8" fill="none" stroke="' + C_PROT + '" stroke-width="4"/></g>';
+    s += '<g transform="translate(' + x + ',' + ZM.yM + ')"><g id="zm_dc_' + i + '" class="tdecoy">' +
+         '<rect x="-12" y="-12" width="24" height="24" rx="5" fill="' + C_DNA + '"/>' +
+         txt('', 0, 6, 'T', 16, '#fff', 'middle', 800) +
+         '<g class="tx"><line x1="-15" y1="-15" x2="15" y2="15" stroke="#C0392B" stroke-width="4" stroke-linecap="round"/>' +
+         '<line x1="15" y1="-15" x2="-15" y2="15" stroke="#C0392B" stroke-width="4" stroke-linecap="round"/></g></g></g>';
+  });
+  s += '<g id="zm_tunote" class="rfade" transform="translate(' + zmX(7) + ',' + ZM.yBan + ')" opacity="0">' +
+       '<rect x="-215" y="-16" width="430" height="32" rx="16" fill="#fff" stroke="' + C_PROT + '" stroke-width="3"/>' +
+       txt('', 0, 6, 'RNA 에는 T 가 없다 — 주형의 A 에는 U 가 온다', 16, '#8E1147', 'middle', 800) + '</g>';
   /* 코돈 괄호 — 개시코돈부터 세 칸씩 */
   for (k = 0; k < DEMO_AA.length; k++){
     s += '<g id="zm_k_' + k + '" class="rfade" transform="translate(' + zmCodX(k) + ',' + ZM.yK + ')" opacity="0">' +
@@ -1861,17 +1949,31 @@ function zmStageSvg(){
 }
 var zmMounted = false;
 function zmApply(ph, prev){
-  var L = zoomLayout(ph, state.zoomFill), stg = zoomStagger(ph, prev), i, k;
+  var L = zoomLayout(ph), stg = zoomStagger(ph, prev), i, k;
   zwSet(L.world);
   for (i = 0; i < DEMO_TEMPLATE.length; i++){ fadeTo('zd_ct_' + i, L.dnaText); fadeTo('zd_tt_' + i, L.dnaText); }
   fadeTo('zd_tmark', L.tmplMark); fadeTo('zl_tmpl', L.labels.tmpl); fadeTo('zl_rows', L.dnaText);
   for (i = 0; i < L.mrna.length; i++){
     delayOf('zm_t_' + i, stg.tile[i]); fadeTo('zm_t_' + i, L.mrna[i].op);
     delayOf('zm_p_' + i, stg.tile[i]); fadeTo('zm_p_' + i, L.pair[i].op);
-    var g = document.getElementById('zm_t_' + i), tx = document.getElementById('zm_tx_' + i);
+    var tx = document.getElementById('zm_tx_' + i);
     if (tx) tx.textContent = L.mrna[i].txt;
-    if (g) g.setAttribute('class', 'rfade' + (L.mrna[i].st === 'blank' ? ' blank' : L.mrna[i].st === 'ok' ? ' okb' : L.mrna[i].st === 'bad' ? ' badb' : ''));
+    if (L.mrna[i].u){
+      delayOf('zm_ur_' + i, stg.tile[i]); fadeTo('zm_ur_' + i, L.tuNote);
+      var dc = document.getElementById('zm_dc_' + i);
+      if (dc){
+        dc.setAttribute('class', 'tdecoy');
+        if (stg.decoy[i] >= 0){
+          if (dc.getBoundingClientRect) dc.getBoundingClientRect();   /* 다시 돌리려면 한 번 끊어야 한다(reflow) */
+          dc.style.animationDelay = stg.decoy[i] + 's';
+          var dx = dc.querySelector ? dc.querySelector('.tx') : null;
+          if (dx) dx.style.animationDelay = stg.decoy[i] + 's';
+          dc.setAttribute('class', 'tdecoy run');
+        }
+      }
+    }
   }
+  fadeTo('zm_tunote', L.tuNote);
   fadeTo('zl_mrow', L.labels.mrnaRow);
   for (k = 0; k < L.codon.length; k++) fadeTo('zm_k_' + k, L.codon[k].op);
   fadeTo('zm_banner', L.banner);
@@ -1890,57 +1992,9 @@ function zmRender(){
   zmApply(ANI.zm.ph, pv);
   renderZoomUI();
 }
-function zoomFilledCount(){
-  var n = 0;
-  BLANK_IDX.forEach(function(b){ if (state.zoomFill[String(b)] === DEMO_MRNA.charAt(b)) n++; });
-  return n;
-}
 function renderZoomUI(){
-  var h = '', atEnd = (ANI.zm.ph >= aniLast('zm')), next = zoomNext(state.zoomFill);
-  BASES4.forEach(function(b){
-    h += '<button type="button" class="chip base" onclick="fillBlank(\'' + b + '\')">' + b + '</button>';
-  });
-  setHTML('zmChips', h);
-  var sl = '';
-  BLANK_IDX.forEach(function(b){
-    var v = state.zoomFill[String(b)], cls = 'slot';
-    if (v === undefined || v === null || v === ''){ cls += (b === next && atEnd ? ' cur' : ''); }
-    else cls += (v === DEMO_MRNA.charAt(b) ? ' ok' : ' bad' + (b === next && atEnd ? ' cur' : ''));
-    sl += '<div class="' + cls + '"><span>' + (b + 1) + '번째 자리 · 주형 <b>' + DEMO_TEMPLATE.charAt(b) + '</b> 의 짝</span>' +
-          '<span class="sv">' + (v ? v : '?') + '</span></div>';
-  });
-  setHTML('zmSlots', sl);
-  var bar = document.getElementById('zmTask');
-  if (bar){
-    bar.innerHTML = !atEnd ? '연출을 끝까지 본 뒤, mRNA 의 빈칸 4개를 칩으로 채우시오.'
-                  : (next < 0 ? '빈칸 4개를 모두 채웠다. 아래 문항에 답하시오.'
-                              : (next + 1) + '번째 자리 — 주형 <b>' + DEMO_TEMPLATE.charAt(next) + '</b> 와 짝을 이루는 염기를 탭하시오.');
-  }
   var t = document.getElementById('zoomProg');
-  if (t) t.textContent = '채운 빈칸 ' + zoomFilledCount() + ' / ' + BLANK_IDX.length;
-}
-function fillBlank(b){
-  if (ANI.zm.ph < aniLast('zm')){
-    showFb('fb_zoom', 'warn', '⏩ 끝까지 를 눌러 연출을 마친 뒤에 빈칸을 채우시오.');
-    return;
-  }
-  var i = zoomNext(state.zoomFill);
-  if (i < 0){
-    showFb('fb_zoom', 'info', '빈칸을 모두 채웠다. 아래 문항에 답하시오.');
-    return;
-  }
-  state.zoomFill[String(i)] = b;
-  saveState();
-  zmRender();
-  var tb = DEMO_TEMPLATE.charAt(i), want = DEMO_MRNA.charAt(i);
-  if (b === want){
-    showFb('fb_zoom', 'good', '옳다. 주형 <b>' + tb + '</b> 의 짝은 <b>' + b + '</b> 이다.' +
-      (zoomDone(state.zoomFill) ? ' 빈칸 4개를 모두 채웠다 🎉' : ''));
-  } else {
-    showFb('fb_zoom', 'bad', '옳지 않다. 주형 <b>' + tb + '</b> 와 짝을 이루는 염기는 ' + b + ' 가 아니다.' +
-      (tb === 'A' ? ' RNA 에는 T 가 없다는 점을 떠올리시오.' : ' DNA 복제에서 짝이 되던 염기를 떠올리시오.'));
-  }
-  updateAll();
+  if (t) t.textContent = '본 국면 ' + (state.zoomSeen ? ZM_STEPS.length : (ANI.zm.ph + 1)) + ' / ' + ZM_STEPS.length;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2248,7 +2302,7 @@ function ctStageSvg(){
       var cod = key + BASES4[k], yk = ctRowY(r, k), kind = codonKind(cod);
       s += '<g id="ct_row_' + cod + '" class="ctrow rfade" opacity="0" pointer-events="none" onclick="ctTapCodon(\'' + cod + '\', event)">';
       s += '<rect id="ct_hl_' + cod + '" x="' + (xy.x + 2) + '" y="' + (yk - CT.sub / 2 + 2) + '" width="' + (CT.cw - 4) + '" height="' + (CT.sub - 4) +
-           '" rx="5" fill="' + (kind === 'aa' ? '#fff' : C_HL) + '" opacity="' + (kind === 'aa' ? 0 : 1) + '"/>';
+           '" rx="5" fill="' + (kind === 'aa' ? '#fff' : (kind === 'stop' ? C_HL_STOP : C_HL)) + '" opacity="' + (kind === 'aa' ? 0 : 1) + '"/>';
       s += '<rect id="ct_cur_' + cod + '" x="' + (xy.x + 2) + '" y="' + (yk - CT.sub / 2 + 2) + '" width="' + (CT.cw - 4) + '" height="' + (CT.sub - 4) +
            '" rx="5" fill="none" stroke="' + C_RNA + '" stroke-width="2.5" opacity="0"/>';
       s += txt('', xy.x + 10, yk + 5, cod, 13.5, '#6C2BD9', 'start', 800, undefined, '', ' font-family="Consolas,Menlo,monospace" letter-spacing="0.5"');
@@ -2784,18 +2838,13 @@ function renderMut(){
    ★④ 와 달리 「지금 해독할 코돈」을 보여 주지 않는다. 어디서 시작해 어떻게 끊는가가 학생의 몫이다.
      학생은 코돈표에서 코돈을 차례로 탭하고, 앱은 맞는지만 판정한다(종결코돈도 한 번 탭한다).
    ★④·⑤ 의 서열(교과서 62쪽)은 쓰지 않는다 — 이미 본 답을 되풀이하게 된다. 값은 검사가 계산으로 확인한다.
-   ★완료 판정에 들어가지 않는다(💪 와 같다). 🎲 서열은 저장하지 않는다 — 새로고침하면 연습 1 로 돌아간다.
+   ★완료 판정에 들어가지 않는다(💪 와 같다). 🎲 새 서열 만들기는 지웠다(교사 2026-10-13) — 연습 셋만 둔다.
    ══════════════════════════════════════════════════════════════ */
 var DRILLS = [
   { id:'k1', name:'개시코돈 찾기', given:'mrna', seq:'GCAUGUUUGGCAAAUGGUAACG',
     task:'mRNA 의 일부분이다. 번역이 시작되는 자리를 찾아, 그 자리부터 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
     hint:'번역은 개시코돈 <b>AUG</b> 에서 시작한다. 5′ 쪽에서부터 AUG 를 찾으시오.' },
-  /* ★두 단계다(교사 지적 2026-10-12 「말도 안 되게 어렵다」 — 17염기를 머릿속으로 전사하며 AUG 까지 찾게 했었다).
-       ① 주형 아래 mRNA 칸을 왼쪽부터 한 염기씩 채운다(② 와 같은 조작) → ② 채운 mRNA 를 보며 연습 1 처럼 해독한다. */
-  { id:'k2', name:'주형 가닥에서', given:'template', seq:'CTACGGTCTAATCG',
-    task:'DNA 주형 가닥이다. 먼저 아래 칸에 전사되는 mRNA 를 왼쪽부터 한 염기씩 채우시오.',
-    task2:'완성한 mRNA 에서 개시코돈을 찾아, 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
-    hint:'주형의 A → U, T → A, G → C, C → G 로 짝을 짓는다. 주형의 <b>TAC</b> 가 개시코돈 AUG 가 된다.' },
+  /* ★연습 2(주형 가닥에서 전사 → 해독)는 지웠다(교사 2026-10-13). 전사는 ② 에서 연출로 본다. 서열은 모두 mRNA 로 준다. */
   { id:'k3', name:'염기가 빠지면', given:'mrna', seq:'AUGGUGUUGACUGAUUAGUA', mut:{ type:'del', pos:5 },
     task:'아래 mRNA 의 염기서열이 바뀌었다. 바뀐 mRNA 를 1번째 염기부터 읽어, 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
     hint:'빠진 자리부터 뒤의 염기가 한 칸씩 당겨진다. 바뀐 서열을 처음부터 다시 세 글자씩 끊으시오.' },
@@ -2803,12 +2852,8 @@ var DRILLS = [
     task:'아래 mRNA 의 염기서열이 바뀌었다. 바뀐 mRNA 를 1번째 염기부터 읽어, 번역이 끝날 때까지 코돈을 코돈표에서 차례로 탭하시오.',
     hint:'더 들어간 자리부터 뒤의 염기가 한 칸씩 밀린다. 바뀐 서열을 처음부터 다시 세 글자씩 끊으시오.' }
 ];
-var RAND_TASK = DRILLS[0].task, RAND_HINT = DRILLS[0].hint;
-var drillRand = null;          /* 🎲 { id:'rand', given:'mrna', seq } — 저장하지 않는다 */
-var drillRandN = 0, drillRandHint = 0;
 
 function drillById(id){
-  if (String(id) === 'rand') return drillRand;
   for (var i = 0; i < DRILLS.length; i++) if (DRILLS[i].id === String(id)) return DRILLS[i];
   return null;
 }
@@ -2821,7 +2866,7 @@ function drillApply(seq, mut){
 }
 /* 정답 — 읽어야 할 mRNA · 개시코돈 자리 · 탭해야 할 코돈(종결코돈까지) · 아미노산 */
 function drillKey(d){
-  var m = drillApply(d.given === 'template' ? transcribe(d.seq) : d.seq, d.mut);
+  var m = drillApply(d.seq, d.mut);
   var s = m.indexOf(START_CODON), D = decode(m, s);
   return { mrna:m, start:s, codons:D.codons.slice(0, D.need), aas:D.aas, stopped:(D.stopAt >= 0) };
 }
@@ -2830,41 +2875,16 @@ function drillMutText(d){
   return d.mut.pos + '번째 염기 ' + b + (d.mut.type === 'del' ? '가 빠진다 (결실)' : '가 한 번 더 들어간다 (중복)');
 }
 function drillNowId(){ return drillById(state.drillNow) ? String(state.drillNow) : DRILLS[0].id; }
-function drillGetN(id){ return id === 'rand' ? drillRandN : (Number(state.drillN[id]) || 0); }
-function drillGetHint(id){ return id === 'rand' ? drillRandHint : (Number(state.drillHint[id]) || 0); }
-function drillDone(id){ var d = drillById(id); return !!d && drillTxDone(d) && drillGetN(id) >= drillKey(d).codons.length; }
+function drillGetN(id){ return Number(state.drillN[id]) || 0; }
+function drillGetHint(id){ return Number(state.drillHint[id]) || 0; }
+function drillDone(id){ var d = drillById(id); return !!d && drillGetN(id) >= drillKey(d).codons.length; }
 function drillDoneCount(){
   var n = 0;
   DRILLS.forEach(function(d){ if (drillDone(d.id)) n++; });
   return n;
 }
-/* 🎲 — 앞에 0~3 염기 · AUG · 아미노산 지정 코돈 3~5개 · 종결코돈 · 뒤에 0~2 염기.
-   ★첫 AUG 가 정한 자리에 오는 것만 받는다(앞 염기와 AUG 가 겹쳐 더 앞에 AUG 가 생기면 버린다). rnd 는 검사가 넣는다. */
-function genRandMrna(rnd){
-  rnd = rnd || Math.random;
-  var sense = [], k;
-  Object.keys(CODON_TABLE).forEach(function(c){ if (!isStopCodon(c) && c !== START_CODON) sense.push(c); });
-  function pick(arr){ return arr[Math.min(arr.length - 1, Math.floor(rnd() * arr.length))]; }
-  for (var t = 0; t < 200; t++){
-    var lead = '', nl = Math.floor(rnd() * 4), body = START_CODON, nc = 3 + Math.floor(rnd() * 3), tail = '', nt = Math.floor(rnd() * 3);
-    for (k = 0; k < nl; k++) lead += pick(BASES4);
-    for (k = 0; k < nc; k++) body += pick(sense);
-    body += pick(STOP_CODONS);
-    for (k = 0; k < nt; k++) tail += pick(BASES4);
-    if ((lead + body).indexOf(START_CODON) === nl) return lead + body + tail;
-  }
-  return 'AUGUUUGGCUAA';
-}
-function newRandDrill(){
-  drillRand = { id:'rand', name:'새 서열', given:'mrna', seq:genRandMrna(), task:RAND_TASK, hint:RAND_HINT };
-  drillRandN = 0; drillRandHint = 0;
-  state.drillNow = 'rand';
-  saveState();
-  renderDrill();
-  showFb('fb_drill', '', '');
-}
 function selDrill(id){
-  if (!drillById(id) || String(id) === 'rand') return;
+  if (!drillById(id)) return;
   state.drillNow = String(id);
   saveState();
   renderDrill();
@@ -2872,54 +2892,18 @@ function selDrill(id){
 }
 function drillHintUp(){
   var id = drillNowId(), h = Math.min(2, drillGetHint(id) + 1);
-  if (id === 'rand') drillRandHint = h; else state.drillHint[id] = h;
+  state.drillHint[id] = h;
   saveState();
   renderDrill();
 }
 /* 틀린 탭 — 학생이 흔히 걷는 잘못된 길을 짚는다. 정답 코돈은 말하지 않는다. */
 function drillWhy(d, K, n, cod){
   if (n === 0 && K.start > 0 && cod === K.mrna.substring(0, 3)) return ' 1번째 염기부터 읽은 것이다. 번역은 개시코돈에서 시작한다.';
-  if (d.given === 'template' && d.seq.replace(/T/g, 'U').substr(K.start + n * 3, 3) === cod) return ' 주형 가닥의 염기를 그대로 옮긴 것이다. 주형과 상보적인 mRNA 로 먼저 바꾸시오.';
   if (d.mut && splitCodons(d.seq, 0)[n] === cod) return ' 바뀌기 전 서열의 코돈이다. 바뀐 mRNA 를 처음부터 다시 세 글자씩 끊으시오.';
   return '';
 }
-function drillTxN(d){ return (d && d.given === 'template') ? (Number(state.drillTx[d.id]) || 0) : 0; }
-function drillTxDone(d){ return !d || d.given !== 'template' || drillTxN(d) >= d.seq.length; }
-function drillTxTap(b){
-  var id = drillNowId(), d = drillById(id);
-  if (!d || d.given !== 'template' || BASES4.indexOf(b) < 0) return;
-  var i = drillTxN(d);
-  if (i >= d.seq.length) return;
-  var t = d.seq.charAt(i), want = DNA_TO_RNA[t];
-  if (b !== want){
-    showFb('fb_drill', 'bad', '옳지 않다. 주형 가닥 ' + (i + 1) + '번째 염기 <b>' + t + '</b>' + (hasJong(t) ? '과' : '와') +
-      ' 짝을 이루는 염기가 아니다.');
-    return;
-  }
-  state.drillTx[id] = i + 1;
-  saveState();
-  renderDrill();
-  showFb('fb_drill', 'good', (i + 1 >= d.seq.length)
-    ? '옳다. mRNA 를 완성하였다. 이제 개시코돈을 찾아 코돈표에서 차례로 탭하시오.'
-    : '옳다. 주형의 ' + t + ' 에는 ' + want + ' 가 온다.');
-  updateAll();
-}
-/* 주형 가닥 아래에 mRNA 칸 — 위아래가 짝을 이루게 같은 열에 둔다. 채울 칸 하나에만 now */
-function drillPairHtml(d){
-  var n = drillTxN(d), m = transcribe(d.seq);
-  var h = '<div class="strand pair"><span class="pend"><span>3′</span><span>5′</span></span>';
-  for (var i = 0; i < d.seq.length; i++){
-    h += '<span class="pcol"><span class="tile dna">' + d.seq.charAt(i) + '<span class="tno">' + (i + 1) + '</span></span>' +
-         '<span class="tile' + (i < n ? '' : (i === n ? ' now' : ' blank')) + '">' + (i < n ? m.charAt(i) : '&nbsp;') + '</span></span>';
-  }
-  return h + '<span class="pend"><span>5′</span><span>3′</span></span></div>';
-}
 function ctTapP(cod){
   var id = drillNowId(), d = drillById(id), K = drillKey(d), n = drillGetN(id);
-  if (!drillTxDone(d)){
-    showFb('fb_drill', 'info', '먼저 주형 가닥 아래의 mRNA 칸을 모두 채우시오.');
-    return;
-  }
   if (n >= K.codons.length){
     showFb('fb_drill', 'info', '이 서열의 해독을 마쳤다. 위에서 다른 연습을 고르시오.');
     return;
@@ -2929,7 +2913,7 @@ function ctTapP(cod){
     showFb('fb_drill', 'bad', '옳지 않다. 탭한 칸은 ' + cod + '이다. ' + (n + 1) + '번째 코돈이 아니다.' + drillWhy(d, K, n, cod));
     return;
   }
-  if (id === 'rand') drillRandN = n + 1; else state.drillN[id] = n + 1;
+  state.drillN[id] = n + 1;
   saveState();
   renderDrill();
   if (isStopCodon(want)){
@@ -2940,15 +2924,25 @@ function ctTapP(cod){
   }
   updateAll();
 }
-/* 끊지 않은 가닥 — 어디서 끊는가는 학생이 정한다. 주형 가닥은 3′ 이 왼쪽이다(② 와 같다). */
-function drillStrandFlat(seq, kind, markPos){
-  var ends = (kind === 'template') ? ['3′', '5′'] : ['5′', '3′'];
-  var h = '<div class="strand"><span class="end">' + ends[0] + '</span>';
+/* 끊지 않은 mRNA — 어디서 끊는가는 학생이 정한다. */
+function drillStrandFlat(seq, markPos){
+  var h = '<div class="strand"><span class="end">5′</span>';
   for (var i = 0; i < seq.length; i++){
-    h += '<span class="tile' + (kind === 'template' ? ' dna' : '') + (markPos === i + 1 ? ' mut' : '') + '">' +
+    h += '<span class="tile' + (markPos === i + 1 ? ' mut' : '') + '">' +
          seq.charAt(i) + '<span class="tno">' + (i + 1) + '</span></span>';
   }
-  return h + '<span class="end">' + ends[1] + '</span></div>';
+  return h + '<span class="end">3′</span></div>';
+}
+/* 코돈표 열림 — 화면 상태일 뿐이라 저장하지 않는다(새로고침하면 접힌다) */
+var drillCtOpen = false;
+function drillCtBtn(){
+  return '<button type="button" class="ctbtn' + (drillCtOpen ? ' on' : '') + '" id="drillCtBtn" onclick="toggleDrillCt()">' +
+         (drillCtOpen ? '📖 코돈표 접기' : '📖 코돈표 보기') + '</button>';
+}
+function dhead(label){ return '<div class="dhead"><div class="dlabel">' + label + '</div>' + drillCtBtn() + '</div>'; }
+function toggleDrillCt(){
+  drillCtOpen = !drillCtOpen;
+  renderDrill();
 }
 function renderDrill(){
   var id = drillNowId(), d = drillById(id), K = drillKey(d), n = drillGetN(id), hl = drillGetHint(id);
@@ -2959,40 +2953,28 @@ function renderDrill(){
     tabs += '<button type="button" class="chip' + (on ? ' on' : (ok ? ' ok' : '')) + '" onclick="selDrill(\'' + x.id + '\')">' +
             (ok ? '✅ ' : '') + '연습 ' + (i + 1) + ' · ' + x.name + '</button>';
   });
-  tabs += '<button type="button" class="chip' + (id === 'rand' ? ' on' : '') + '" onclick="newRandDrill()">🎲 새 서열 만들기</button>';
   setHTML('drillTabs', tabs);
 
-  var tx = drillTxDone(d);
   /* ★개시코돈을 맞게 탭하면 그 자리부터 코돈으로 끊어 보인다(교사 요청 2026-10-12 「뒤에 코돈들이 잘 보이게」).
        시작 자리를 찾는 것까지가 학생의 몫이고, 그 뒤 끊는 자리는 저절로 정해지기 때문이다.
        연습 3·4 는 빼다 — 바뀐 서열을 스스로 다시 끊는 것이 과제다. */
   var grouped = !d.mut && n >= 1;
-  var b = '<div class="taskbar">' + ((d.given === 'template' && tx) ? d.task2 : d.task) + '</div>';
+  var b = '<div class="taskbar">' + d.task +
+          ((!drillCtOpen && !done) ? ' (📖 코돈표 보기 를 눌러 표를 여시오.)' : '') + '</div>';
   if (grouped){
-    b += '<div class="dlabel">' + (d.given === 'template' ? '전사한 mRNA' : 'mRNA') + ' — 개시코돈부터 세 글자씩</div>' +
+    b += dhead('mRNA — 개시코돈부터 세 글자씩') +
          strandHtml(K.mrna, K.start, { cursor:n, need:K.codons.length, stopAt:K.codons.length - 1 });
   } else if (d.mut){
-    b += '<div class="dlabel">원래 mRNA</div>' + strandHtml(d.seq, 0, { mutPos:d.mut.pos }) +
+    b += dhead('원래 mRNA') + strandHtml(d.seq, 0, { mutPos:d.mut.pos }) +
          '<div class="stage-hint">원래 아미노산서열 — ' + decode(d.seq, 0).aas.join(' – ') + '</div>' +
          '<div class="datbox">바뀐 것 — <b>' + drillMutText(d) + '</b></div>';
   } else {
-    if (d.given === 'template'){
-      b += '<div class="dlabel">DNA 주형 가닥 (위) · 전사되는 mRNA (아래)</div>' + drillPairHtml(d);
-      if (!tx){
-        b += '<div class="chips">';
-        BASES4.forEach(function(x){ b += '<button type="button" class="chip base" onclick="drillTxTap(\'' + x + '\')">' + x + '</button>'; });
-        b += '</div>';
-      }
-    } else {
-      b += '<div class="dlabel">mRNA</div>' + drillStrandFlat(d.seq, d.given);
-    }
+    b += dhead('mRNA') + drillStrandFlat(d.seq);
   }
   if (hl >= 1) b += '<div class="hintbox">💡 ' + d.hint + '</div>';
   if (hl >= 2){
     if (d.mut){
-      b += '<div class="hintbox">💡 바뀐 mRNA — ' + drillStrandFlat(K.mrna, 'mrna') + '</div>';
-    } else if (d.given === 'template' && !tx){
-      b += '<div class="hintbox">💡 주형의 <b>' + d.seq.charAt(drillTxN(d)) + '</b> 에는 <b>' + DNA_TO_RNA[d.seq.charAt(drillTxN(d))] + '</b> 가 온다.</div>';
+      b += '<div class="hintbox">💡 바뀐 mRNA — ' + drillStrandFlat(K.mrna) + '</div>';
     } else if (!grouped){
       b += '<div class="hintbox">💡 개시코돈부터 세 글자씩 끊으면 — ' + strandHtml(K.mrna, K.start, {}) + '</div>';
     }
@@ -3001,6 +2983,9 @@ function renderDrill(){
     b += '<button type="button" class="hintbtn" onclick="drillHintUp()">' + (hl ? '💡 힌트를 하나 더 보기' : '💡 힌트 보기') + '</button>';
   }
   setHTML('drillBody', b);
+  var wr = document.getElementById('drillWrap'), cd = document.getElementById('cardDrill');
+  if (wr) wr.className = 'drill-wrap' + (drillCtOpen ? ' open' : '');
+  if (cd && cd.classList){ if (drillCtOpen) cd.classList.add('ctwide'); else cd.classList.remove('ctwide'); }
   setHTML('drillPep', pepHtml(K.aas.slice(0, Math.min(n, K.aas.length)), done && K.stopped));
 
   ctClearAll('cp', 'cur');
@@ -3295,8 +3280,8 @@ function unlockDraft(){
 var SEC_DEF = {
   cell:  { qs:function(){ return Q_CELL; }, ask:false, fb:'fb_cell', msg:'①-1 을 처음 국면으로 되돌리고 문항을 지웠다.',
            run:function(){ state.cellSeen = false; ANI.cs = { ph:0, prev:-1 }; } },
-  zoom:  { qs:function(){ return Q_ZOOM; }, ask:false, fb:'fb_zoom', msg:'② 의 빈칸과 문항을 지우고 처음 국면으로 되돌렸다.',
-           run:function(){ state.zoomSeen = false; state.zoomFill = {}; ANI.zm = { ph:0, prev:-1 }; } },
+  zoom:  { qs:function(){ return Q_ZOOM; }, ask:false, fb:'fb_zoom', msg:'② 를 처음 국면으로 되돌리고 문항을 지웠다.',
+           run:function(){ state.zoomSeen = false; ANI.zm = { ph:0, prev:-1 }; } },
   code:  { qs:function(){ return Q_CODE; }, ask:false, fb:'fb_code', msg:'①-2 를 처음 상태로 되돌렸다.',
            run:function(){ state.codeRun = {}; state.codeLast = null; } },
   find:  { qs:function(){ return Q_FIND; }, ask:true,  fb:'fb_find', msg:'③ 의 연 칸·본 설명·문항을 지우고 빈 표로 되돌렸다.',
@@ -3311,7 +3296,7 @@ var SEC_DEF = {
   mut:   { qs:function(){ return Q_MUT; },  ask:true,  fb:'fb_mut',  msg:'⑤ 의 예상과 결과를 지웠다 — 다시 예상하시오.',
            run:function(){ state.mutGuess = {}; state.mutRun = {}; state.mutNow = null; } },
   drill: { ask:false, fb:'fb_drill', msg:'✏️ 의 해독을 지웠다 — 연습 1 부터 다시 푸시오.',
-           run:function(){ state.drillN = {}; state.drillHint = {}; state.drillTx = {}; state.drillNow = null; drillRand = null; drillRandN = 0; drillRandHint = 0; } },
+           run:function(){ state.drillN = {}; state.drillHint = {}; state.drillNow = null; } },
   prac:  { prac:true,  ask:false, fb:'', msg:'💪 의 문항을 지웠다.' },
   write: { write:true, ask:true,  fb:'', msg:'⑥ 에 적은 답안과 자기평가를 지웠다.' }
 };
@@ -3401,16 +3386,13 @@ function init(){
       }
     });
   }
-  ['zoomFill','codeRun','ctOpen','ctSeen','decN','autoF','mutGuess','mutRun','drillN','drillHint','drillTx','qPick','pPick','ta','self'].forEach(function(k){
+  ['codeRun','ctOpen','ctSeen','decN','autoF','mutGuess','mutRun','drillN','drillHint','qPick','pPick','ta','self'].forEach(function(k){
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   /* ★범위 밖의 값·없는 이름은 걸러 낸다 — 저장분이 망가져도 화면이 비지 않게 한다 */
   state.cellSeen = !!state.cellSeen;
   state.zoomSeen = !!state.zoomSeen;
-  Object.keys(state.zoomFill).forEach(function(k){
-    var i = Number(k), v = state.zoomFill[k];
-    if (BLANK_IDX.indexOf(i) < 0 || BASES4.indexOf(v) < 0) delete state.zoomFill[k];
-  });
+  delete state.zoomFill;   /* 예전 빈칸 채우기의 저장분 — 이제 쓰지 않는다 */
   Object.keys(state.ctOpen).forEach(function(k){
     if (!(k.length === 2 && BASES4.indexOf(k.charAt(0)) >= 0 && BASES4.indexOf(k.charAt(1)) >= 0) || state.ctOpen[k] !== true) delete state.ctOpen[k];
   });
@@ -3433,18 +3415,14 @@ function init(){
   });
   Object.keys(state.drillN).forEach(function(k){
     var d = drillById(k), v = state.drillN[k];
-    if (!d || k === 'rand' || typeof v !== 'number' || v !== Math.floor(v) || v < 1 || v > drillKey(d).codons.length) delete state.drillN[k];
+    if (!d || typeof v !== 'number' || v !== Math.floor(v) || v < 1 || v > drillKey(d).codons.length) delete state.drillN[k];
   });
   Object.keys(state.drillHint).forEach(function(k){
     var v = state.drillHint[k];
-    if (!drillById(k) || k === 'rand' || (v !== 1 && v !== 2)) delete state.drillHint[k];
+    if (!drillById(k) || (v !== 1 && v !== 2)) delete state.drillHint[k];
   });
-  Object.keys(state.drillTx).forEach(function(k){
-    var d = drillById(k), v = state.drillTx[k];
-    if (!d || d.given !== 'template' || typeof v !== 'number' || v !== Math.floor(v) || v < 1 || v > d.seq.length) delete state.drillTx[k];
-  });
-  Object.keys(state.drillN).forEach(function(k){ if (!drillTxDone(drillById(k))) delete state.drillN[k]; });   /* 전사 전엔 해독이 없다 */
-  if (!drillById(state.drillNow)) state.drillNow = null;      /* 🎲 은 저장되지 않으므로 여기서 걸러진다 */
+  delete state.drillTx;   /* 지운 연습 2(전사 칸)의 옛 저장분 */
+  if (!drillById(state.drillNow)) state.drillNow = null;      /* 없는 id(예전 🎲 'rand' 포함)는 걸러진다 */
   var cl = Number(state.codeLast);
   state.codeLast = (CODE_SIZES.indexOf(cl) >= 0) ? cl : null;
   /* ★저장분에 teacherUnlock 이 남아 있어도 켜지 않는다 — 새로고침하면 언제나 잠긴 채로 시작한다. */
